@@ -1,5 +1,8 @@
 # Install make-short (v3, Blender engine)
 
+> **Claude Code only.** This skill runs Blender, Node and ffmpeg on your own computer, so it does not work as a claude.ai Skills upload (the folder is also too large for it). Install it in Claude Code with the steps below.
+
+
 ## Prerequisites
 | Tool | Version | Install |
 |---|---|---|
@@ -15,10 +18,14 @@
 Optional: ElevenLabs key (`$env:ELEVENLABS_API_KEY`, set in your own terminal, never in chat) for a generated voice and sound effects; Blotato key only for auto-posting. Nothing else needs a key.
 
 ## Install the skill
-PowerShell, from the folder that contains `make-short`:
+**Easiest:** open Claude Code and paste: `Install the skill from https://github.com/nocodehack/make-short into my Claude Code skills folder`. Claude downloads and installs it. Then restart Claude Code.
+
+Or by hand, in PowerShell:
 ```
+git clone https://github.com/nocodehack/make-short
 Copy-Item -Recurse -Force .\make-short "$env:USERPROFILE\.claude\skills\make-short"
 ```
+No git? On GitHub click **Code > Download ZIP**, unzip it, rename `make-short-master` to `make-short`, and run the `Copy-Item` line from the folder that contains it.
 Close and reopen Claude Code, then type `/make-short <your idea>`.
 (If the skill already exists and you want to keep it: rename the old folder first.)
 

@@ -11,7 +11,7 @@ then scored by a **fresh critic agent** so you know exactly what to fix.
 
 **Free · MIT · runs on your own PC · never posts without you**
 
-[▶️ Watch the full tutorial](https://www.youtube.com/channel/UCRiXX3JVd24ruHmERlncnjQ) · [⚙️ Install](#-install) · [🧭 How it works](#-how-it-works) · [❓ FAQ](#-faq)
+[▶️ Watch the full tutorial](https://www.youtube.com/watch?v=gH__ujN5Joo) · [⚙️ Install](#-install) · [🧭 How it works](#-how-it-works) · [❓ FAQ](#-faq)
 
 </div>
 
@@ -81,7 +81,9 @@ The first full render passed every automatic check and still looked like a horro
 | Whisper (free voice route) | any | `python -m pip install openai-whisper` |
 | GPU | one Blender can use (EEVEE) | a 60 s film renders in about 21 min on a gaming laptop |
 
-**Install the skill** (PowerShell, from the folder that contains `make-short`):
+**Easiest:** open Claude Code and paste: `Install the skill from https://github.com/nocodehack/make-short into my Claude Code skills folder`. Claude downloads and installs it. Then restart Claude Code.
+
+**Or by hand** (PowerShell):
 
 ```powershell
 git clone https://github.com/nocodehack/make-short
@@ -137,7 +139,7 @@ make-short/
 
 ## ❓ FAQ
 
-**Can I upload it to claude.ai Skills?** No. It runs Blender and scripts on your computer, so it needs Claude Code (desktop app or terminal). Install it with the steps in [Install](#-install).
+**Can I upload it to claude.ai Skills?** No. It runs Blender and scripts on your computer, so it needs Claude Code (desktop app or terminal). Open Claude Code and ask it to install the skill from this repo's link (see [Install](#-install)).
 
 **Can I make Shorts on my phone?** No. Blender runs on a computer (Windows for these scripts).
 
