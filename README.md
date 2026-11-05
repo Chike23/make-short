@@ -66,6 +66,8 @@ The first full render passed every automatic check and still looked like a horro
 
 ## ⚙️ Install
 
+> **Claude Code only.** This skill runs Blender, Node and ffmpeg on your own computer, so it does not work as a claude.ai Skills upload (the folder is also too large for it). Install it in Claude Code as shown below.
+
 **You need** (Windows, the scripts run in Git Bash):
 
 | Tool | Version | Install |
@@ -134,6 +136,10 @@ make-short/
 ---
 
 ## ❓ FAQ
+
+**Can I upload it to claude.ai Skills?** No. It runs Blender and scripts on your computer, so it needs Claude Code (desktop app or terminal). Install it with the steps in [Install](#-install).
+
+**Can I make Shorts on my phone?** No. Blender runs on a computer (Windows for these scripts).
 
 **Do I need to know Blender?** No. Claude writes the Blender Python scripts. You only look at the stills and the render.
 
