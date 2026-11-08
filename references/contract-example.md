@@ -51,7 +51,7 @@ Workspace: `D:\claude\videos\03-claude-animated-shorts\4-short-v3\`. **Each agen
 - Uses `look.toon_mat` and `look.ink_hull`. Until look.py exists, put a local stub with the same signatures in your own file.
 
 **shots.json** (agent SHOTS, a data file, no Blender)
-- An array of shots `{id, set, f_in, f_out, transition_in: 'travel'|'whip'|'dissolve', camera:[{f, pos:[x,y,z], target:[x,y,z] or anchor, lens, roll_deg}], actions:[{f, char, place|pose|face|hold, args}], props:[{f, prop, action:'appear'|'dent'|'pop'|'bend', args}], fx:[{f, type, at}], mood}`.
+- An array of shots `{id, set, f_in, f_out, transition_in: 'dissolve'|'cut'|'travel'|'whip' (reference style: dissolve, 0–2 cut, no whip), camera:[{f, pos:[x,y,z], target:[x,y,z] or anchor, lens, roll_deg, size, subj, loc}] (a middle key needs only f and size; see v3/shots/NOTES.md), actions:[{f, char, place|pose|face|hold, args}], props:[{f, prop, action:'appear'|'dent'|'pop'|'bend', args}], fx:[{f, type, at}], mood}`.
 - Positions are in set-local metres from the set origin.
 - About one picture shot every 4.3 s (none over 8.6 s). Inside each shot the camera keeps moving and changes size about every 1.35 s through camera keys with `size`, mostly one step at a time. Screen time: XW 19%, WIDE 17%, MED 40%, CU 13.5%, MACRO 11%. Faces at 30–40% of the frame only in CU. Use tilts, crane and low angles. Moves are eased over 20+ frames.
 - Join shots with `dissolve` (8-frame crossfade, rendered with `DISSOLVE=cross`); 0–2 `cut` for an insert or the final impact; no whips, no dip to black.
