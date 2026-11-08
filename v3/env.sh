@@ -5,7 +5,7 @@ if [ -n "$BLENDER" ]; then BL="$BLENDER"
 else
   case "$(uname -s)" in
     MINGW*|MSYS*|CYGWIN*) BL="$(ls -d "/c/Program Files/Blender Foundation/Blender 5."*/blender.exe 2>/dev/null | sort -V | tail -1)";;
-    Darwin) BL="$(ls -d /Applications/Blender*.app/Contents/MacOS/Blender "$HOME"/Applications/Blender*.app/Contents/MacOS/Blender 2>/dev/null | sort -V | tail -1)";;
+    Darwin) BL="$(ls -d /Applications/Blender*.app/Contents/MacOS/Blender "$HOME"/Applications/Blender*.app/Contents/MacOS/Blender 2>/dev/null | sort | tail -1)";;   # no sort -V: older macOS sort lacks it
     *) BL="$(command -v blender)";;
   esac
 fi

@@ -18,6 +18,13 @@
 Optional: ElevenLabs key (`$env:ELEVENLABS_API_KEY`, set in your own terminal, never in chat) for a generated voice and sound effects; Blotato key only for auto-posting. Nothing else needs a key.
 
 ## macOS (Apple silicon or Intel) and Linux
+**macOS, one command** (needs Homebrew from brew.sh; asks you to sign in to GitHub once if this is a private copy):
+```bash
+(brew list gh >/dev/null 2>&1 || brew install gh) && (gh auth status >/dev/null 2>&1 || gh auth login -h github.com -p https -w) \
+  && gh repo clone <owner>/make-short ~/.claude/skills/make-short && bash ~/.claude/skills/make-short/setup-mac.sh
+```
+`setup-mac.sh` installs ffmpeg, node, python and gh with Homebrew, checks Blender 5.x and Arial Black, builds the Python venv, adds `PYTHON` to `~/.zshrc` and runs a headless Blender smoke test. Add `--whisper` for local transcription, `--ocr` for `measure/` caption OCR. Safe to re-run. The manual steps follow.
+
 The v3 scripts detect Blender on macOS (`/Applications/Blender.app`) and Linux (`blender` on PATH), use `python3`, and pass normal absolute paths. Git Bash and PowerShell are only needed on Windows.
 ```bash
 brew install ffmpeg node python tesseract        # tesseract only for measure/ caption OCR (optional)
