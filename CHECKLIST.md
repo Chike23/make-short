@@ -18,9 +18,17 @@ The v3 files were copied and path-fixed by reading and editing only. Run these i
 ## C. Known risks to verify
 - `finish.mjs`: `subtitles=` path on Windows with a drive colon; if ffmpeg errors, run it from the `voice` folder with a relative ass path.
 - `go.sh` splits frames into thirds; for N not divisible by 3 check the last frame f0449 exists.
-- `gate.py` BAND moods only know day/night/interior; a new mood needs a BAND entry.
+- `gate.py` BAND knows day/dusk/interior/night (aliases like `night_in` map onto them); a genuinely new mood needs a BAND entry.
+- The example's night shots are graded for the old, darker band and will fail the measured night band (YAVG 69–118) until `look.MOODS['night']` is lifted with `tune.sh`.
 - `lib/sets.py` self-regenerates textures with `python` (needs pillow, numpy) only if `tex/` is incomplete.
 - `post.mjs` expects the old layout (`out/<slug>-9x16.mp4`, `story.md`); dry run only.
 - Story outside the shipped sets/characters needs edits in `lib/sets.py` / `lib/chars.py`; not tested.
 - `whisper-to-timing.mjs` assigns lines by word count; a mis-heard word shifts lines.
 - The 60 s example's `shots.json` is tied to its story; it is a schema example, not a template.
+
+## D. Added with the reference measurement (not yet run in Blender)
+- `DISSOLVE=cross bash go.sh t2` on the 60 s example: `render/log_handles.txt` has no Traceback; `render/handles/` holds `out_*`/`in_*` PNGs; `dissolve.py` reports blended frames. Look at a strip across one dissolve: the two shots should overlap with no dip to black.
+- A shot with 3+ camera keys carrying `size` (for example FS -> MS -> MCU): `bash keystills.sh` renders every camera key to `gate/fNNNN.png`. Check each key's framing, and tune `KEYMUL` in scene.py (or the key's `hvmul`) if MS or MCU is too loose or tight. Then render the shot and check the first and last 5 frames for a jump.
+- `python3 audit.py` (`python audit.py` on Windows) in P after `finish.mjs`: one PASS/FAIL table; `critic/audit.md` written.
+- Caption position: audit's "Caption baseline" should read about 1376. If not, set `"captionY"` in `voice/cues.json` to 1400 + (1376 - measured).
+- macOS: `bash gate.sh s01` finds Blender in /Applications and writes `gate/s01.png`.

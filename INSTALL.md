@@ -17,6 +17,21 @@
 
 Optional: ElevenLabs key (`$env:ELEVENLABS_API_KEY`, set in your own terminal, never in chat) for a generated voice and sound effects; Blotato key only for auto-posting. Nothing else needs a key.
 
+## macOS (Apple silicon or Intel) and Linux
+The v3 scripts detect Blender on macOS (`/Applications/Blender.app`) and Linux (`blender` on PATH), use `python3`, and pass normal absolute paths. Git Bash and PowerShell are only needed on Windows.
+```bash
+brew install ffmpeg node python tesseract        # tesseract only for measure/ caption OCR (optional)
+python3 -m venv ~/.venvs/shorts                  # Homebrew Python refuses global pip installs (PEP 668)
+~/.venvs/shorts/bin/pip install numpy pillow opencv-python pandas openpyxl pytesseract openai-whisper
+export PYTHON=~/.venvs/shorts/bin/python         # add to ~/.zshrc; env.sh and lib/sets.py use $PYTHON first
+# Blender 5.x: download the .dmg from blender.org and drag it to /Applications (or set BLENDER=/path/to/Blender)
+git clone https://github.com/nocodehack/make-short ~/.claude/skills/make-short
+```
+EEVEE renders on the Apple GPU (Metal). The captions use the system font "Arial Black", which ships with macOS. On Linux, install it (ttf-mscorefonts) or change the font name in `v3/voice/finish.mjs` and re-check the cap height with `audit.py`.
+Not tested on macOS yet: the Windows-only helpers in `scripts/` (legacy 2D route, Chrome paths) and `post.mjs`.
+
+**Extra Python packages** for `v3/audit.py`, `v3/dissolve.py` and `measure/`: `numpy pillow opencv-python` (and `pandas openpyxl` for measure/). On Windows `python -m pip install …`; on macOS install them into the venv above.
+
 ## Install the skill
 **Easiest:** open Claude Code and paste: `Install the skill from https://github.com/nocodehack/make-short into my Claude Code skills folder`. Claude downloads and installs it. Then restart Claude Code.
 

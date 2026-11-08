@@ -42,7 +42,7 @@ The first full render passed every automatic check and still looked like a horro
 
 | Step | What Claude does | You do |
 |---|---|---|
-| **1. Measure** | Breaks a Short you love into numbers (shots, locations, colour, brightness) and its story into steps | Pick the reference |
+| **1. Measure** | Breaks a Short you love into numbers at its full frame rate (every cut and dissolve, shot sizes, camera motion, locations, colour per mood, caption geometry) and its story into steps. Four reference videos ship pre-measured in `references/reference-style.md` | Pick the reference |
 | **2. Story** | Writes a paradox story: hook, escalation, "You see…", payoff, twist. Fact-checks the real history | **Approve** the story |
 | **3. Voice** | Uses your own recording (free) or ElevenLabs, then times every word. The voice is the clock | Record, or set your own key |
 | **4. Build** | Writes the shots, acting and Blender scenes with code. Big Shorts use a team of agents with a `CONTRACT.md` | Approve the plan |
@@ -128,8 +128,9 @@ make-short/
 ├── SKILL.md           the steps Claude follows
 ├── INSTALL.md         prerequisites + install
 ├── CHECKLIST.md       first-run checks
-├── references/        story rules, character rules, lessons, contract + brief examples
-├── v3/                the Blender engine (scenes, characters, shots, gate, render, voice, critic rubric)
+├── references/        reference-style.md (the measured reference), story rules, character rules, lessons, contract + brief examples
+├── measure/           frame-accurate reference measurement + review brief for one agent per video
+├── v3/                the Blender engine (scenes, characters, shots, gate, render, voice, critic rubric, audit.py, dissolve.py)
 │   └── example-60s/   a complete 60 s example project (story, contract, shots, acting)
 ├── scripts/           voice, posting (Blotato), QA helpers
 └── engine/ template/  the legacy 2D route
@@ -151,7 +152,7 @@ make-short/
 
 **Does it post for me?** Only if you connect Blotato and type `go`. It shows the exact post first and uploads it as private.
 
-**Mac or Linux?** It's built and tested on Windows. The Blender and Node parts are cross-platform, but the paths and scripts assume Windows + Git Bash.
+**Mac or Linux?** It was built and tested on Windows. The v3 scripts now detect Blender on macOS and Linux and use `python3` (see INSTALL.md); the first full run on a Mac is still to be done.
 
 ---
 

@@ -26,25 +26,56 @@ const shotsFile = path.join(path.dirname(silent), '..', 'shots.json');
 if (fs.existsSync(shotsFile)) for (const s of JSON.parse(fs.readFileSync(shotsFile, 'utf8')))
   if (s.transition_in === 'whip' && !sfx.some(x => Math.abs(x.t - s.f_in / 30) < 0.25)) sfx.push({ n: 'whoosh', t: Math.max(0, (s.f_in - 3) / 30), v: 0.35 });
 
-// captions like the reference: original case, 1–2 words (a short word joins the next), held until the next group, max 0.9 s
+// captions measured on the reference (references/reference-style.md section 6), at 1080x1920:
+//  - one centred line, cap top 1321 px, baseline 1376 px (line centre 70.2% of the height), cap height 54 px
+//  - near-white fill, black outline, soft dark shadow all round; NO pop/scale/fade: a card replaces the last on one frame
+//    (Outline 5 plus a shadow layer of Outline 10, \blur5, 69% opaque black, matched the reference edge profile best after a 720p upload)
+//  - original case AND punctuation kept; 75% one-word cards, 22% two-word; a pair always contains a word of <= 3 letters
+//    and never crosses punctuation; cards hold until the next card (a caption on every frame)
+// Arial Black at 108 has a 54-55 px cap height in libass. CAP_Y = the \pos y of the text box bottom (baseline + descender);
+// after a render, `python audit.py` measures the real cap top/baseline: move CAP_Y by (1376 - measured baseline).
+const CAP_Y = CF.captionY ?? 1400;
+const ONE_WORD = CF.oneWordShare ?? 0.75;
 const ts = s => { const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, x = (s % 60).toFixed(2).padStart(5, '0'); return `${h}:${String(m).padStart(2, '0')}:${x}`; };
-const clean = w => w.replace(/["“”.,!?;:]/g, '');
+const clean = w => w.replace(/["“”]/g, '');
+const bare = w => w.replace(/[^\p{L}\p{N}']/gu, '');
+// candidate pairs: same line, no punctuation after the first word, one of the two words has <= 3 letters
+const cand = [];
+for (let i = 0; i + 1 < words.length; i++) {
+  const w = words[i], n = words[i + 1];
+  if (n.line !== w.line || /[.,!?;:…—]["”’)]*$/.test(w.w)) continue;
+  if (Math.min(bare(w.w).length, bare(n.w).length) > 3) continue;
+  cand.push({ i, span: n.end - w.start });
+}
+// take the tightest-spoken pairs until one-word cards fall to the target share: pairs = (1 - s) / (2 - s) of the words
+const want = Math.round(words.length * (1 - ONE_WORD) / (2 - ONE_WORD));
+const paired = new Set();
+for (const c of cand.sort((x, y) => x.span - y.span)) {
+  if (paired.size / 2 >= want) break;
+  if (paired.has(c.i) || paired.has(c.i + 1)) continue;
+  paired.add(c.i); paired.add(c.i + 1);
+}
 const groups = [];
 for (let i = 0; i < words.length; i++) {
-  const w = words[i], n = words[i + 1];
-  const pair = n && n.line === w.line && clean(w.w).length <= 3 && !/[.,!?]$/.test(w.w) && n.start - w.start < 0.45;
-  groups.push({ start: w.start, end: (pair ? n : w).end, text: pair ? `${clean(w.w)} ${clean(n.w)}` : clean(w.w) });
-  if (pair) i++;
+  const w = words[i];
+  if (paired.has(i) && paired.has(i + 1) && words[i + 1].line === w.line && !/[.,!?;:…—]["”’)]*$/.test(w.w)) {
+    groups.push({ start: w.start, end: words[i + 1].end, text: `${clean(w.w)} ${clean(words[i + 1].w)}` }); i++;
+  } else groups.push({ start: w.start, end: w.end, text: clean(w.w) });
 }
-// shots where a hero prop sits in the caption band: lift the caption there instead (frame ranges, 30 fps)
+// shots where a hero prop sits in the caption band: the reference never moves its captions, so use this only as a last resort
 const CAP_UP = CF.capUp || [];
-const ev = groups.map((w, i) => {
-  const end = Math.min(groups[i + 1]?.start ?? w.end + 0.4, w.start + 0.9);
-  const txt = w.text;
-  const mv = CAP_UP.some(([a, b]) => w.start * 30 >= a && w.start * 30 < b) ? 1180 : 0;
-  return `Dialogue: 0,${ts(w.start)},${ts(end)},W,,0,0,${mv},,{\\fscx80\\fscy80\\t(0,90,\\fscx100\\fscy100)}${txt}`;
+const ev = [];
+groups.forEach((w, i) => {
+  const end = groups[i + 1]?.start ?? Math.min(w.end + 0.4, T.duration + 0.4);   // hold until the next card: no gaps
+  const y = CAP_UP.some(([a, b]) => w.start * 30 >= a && w.start * 30 < b) ? CAP_Y - 620 : CAP_Y;
+  const pos = `\\an2\\pos(540,${y})`;
+  ev.push(`Dialogue: 0,${ts(w.start)},${ts(end)},S,,0,0,0,,{${pos}\\blur5}${w.text}`);   // soft shadow layer
+  ev.push(`Dialogue: 1,${ts(w.start)},${ts(end)},W,,0,0,0,,{${pos}}${w.text}`);           // the caption
 });
-const ass = `[Script Info]\nScriptType: v4.00+\nPlayResX: 1080\nPlayResY: 1920\n\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: W,Arial Black,108,&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,10,6,2,60,60,560,1\n\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n${ev.join('\n')}\n`;
+const ass = `[Script Info]\nScriptType: v4.00+\nPlayResX: 1080\nPlayResY: 1920\nWrapStyle: 2\n\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n` +
+  `Style: W,Arial Black,108,&H00F9F9F9,&H00F9F9F9,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,5,0,2,60,60,0,1\n` +
+  `Style: S,Arial Black,108,&H50000000,&H50000000,&H50000000,&H00000000,0,0,0,0,100,100,0,0,1,10,0,2,60,60,0,1\n\n` +
+  `[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n${ev.join('\n')}\n`;
 fs.writeFileSync(path.join(here, 'captions.ass'), ass);
 
 const out = path.join(root, 'out'); fs.mkdirSync(out, { recursive: true });
@@ -62,4 +93,4 @@ const fc = [
 ].join(';');
 execFileSync('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', ...inputs, '-filter_complex', fc, '-map', '[v]', '-map', '[a]',
   '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', dst], { stdio: 'inherit' });
-console.log(`wrote ${dst}  (${sfx.length} sfx, ${groups.length} captions from ${words.length} words)`);
+console.log(`wrote ${dst}  (${sfx.length} sfx, ${groups.length} captions from ${words.length} words, ${Math.round(100 * groups.filter(g => !g.text.includes(' ')).length / groups.length)}% one-word)`);

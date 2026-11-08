@@ -1,10 +1,13 @@
 """Integrator: builds the whole film from lib/* + shots.json.
 blender -b -P scene.py -- gate OUTDIR [ids...]     render the middle frame of every shot (or listed ids)
 blender -b -P scene.py -- frames OUTDIR A B [SAMPLES]   render frames A..B-1 as PNG
+blender -b -P scene.py -- handles OUTDIR [H] [SAMPLES]  DISSOLVE=cross only: H extra frames per side of every dissolve (see dissolve.py)
+Camera keys may carry "size" (XW WIDE MED CU MACRO, or EWS WS FS MS MCU CU INS) and "subj": the camera then changes framing
+INSIDE the shot, as the reference does (77% of its size changes happen inside continuous moves, references/reference-style.md).
 shots coordinates: {anchor, off:[x,y,z]} with y = toward camera -> world Y is mirrored (camera sits at -Y, chars face -Y).
 """
 import bpy, sys, os, json, math
-from mathutils import Vector, Euler, Quaternion
+from mathutils import Vector, Euler, Quaternion, Matrix
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE + '/lib')
 import look, sets, chars
@@ -12,6 +15,7 @@ look.MOODS['night'].update(fill=((0.6, 0.7, 1.0), 190.0), exp=0.12)   # round 5:
 
 args = sys.argv[sys.argv.index('--') + 1:]
 MODE, OUT = args[0], args[1]
+CROSS = os.environ.get('DISSOLVE', '') == 'cross'   # reference: true crossfades (go.sh + dissolve.py), never a dip to ink
 SAMPLES = 12
 SHOTS = json.load(open(HERE + '/shots.json'))
 # beat directors: beats/<name>.json = {"range":[f0,f1], "shots":[full shot objects, replace by id], "acting":[acting beats]}
@@ -342,6 +346,11 @@ SUBJ = {x['id']: x.get('subj') for x in SHOTS}
 CHN = {'m': 'marcel', 'g': 'gaston', 's1': 's1', 's2': 's2', 's3': 's3'}
 FRACP = {'CU': 0.36, 'MED': 0.40, 'WIDE': 0.30, 'XW': 0.20, 'MACRO': 0.5}
 FRAC = {'CU': 0.36, 'MED': 0.15, 'WIDE': 0.09, 'XW': 0.05, 'MACRO': 0.5}   # chars: head height / frame height; props: subject height / frame height
+# reference 7-step scale on camera keys -> engine size (its framing rules), then a frame-height scale for the in-between sizes.
+# The 2.5 m minimum frame height below dominates the head-fraction term, so MS/MCU are made by scaling AFTER it.
+# START values: check them on key stills (keystills.sh); a key may also carry its own "hvmul".
+SZ = {'EWS': 'XW', 'WS': 'WIDE', 'FS': 'MED', 'MS': 'MED', 'MCU': 'CU', 'CU': 'CU', 'INS': 'MACRO'}
+KEYMUL = {'MS': 0.65, 'MCU': 1.2}
 HC = {'marcel': 1.1, 'gaston': 1.42, 's1': 1.1, 's2': 1.1, 's3': 1.1}
 camkeys = {}
 CAMOVR = {x['id']: x['camrel'] for x in SHOTS if 'camrel' in x}
@@ -398,8 +407,10 @@ def head_h():
     o = bpy.data.objects.get('Marcel_skull'); return max(o.dimensions.z, 0.3) if o else 0.6
 
 def frame_cam(s, k, f, prev, which):
-    sid = s['set']; spec = SUBJ.get(s['id']); lens = k['lens']; size = s['size']
-    pos = W(sid, k['pos']); tgt = W(sid, k['target'])
+    fsize = k.get('size') or s['size']; size = SZ.get(fsize, fsize)          # per-key size (falls back to the shot's)
+    k0 = s['camera'][0]   # a middle key may give only f + size (+ subj): the rest falls back to the shot's first key
+    sid = s['set']; spec = k.get('subj') or SUBJ.get(s['id']); lens = k.get('lens', k0['lens'])
+    pos = W(sid, k.get('pos', k0['pos'])); tgt = W(sid, k.get('target', k0['target']))
     if spec:
         sc.frame_set(f)
         pts = subj_pts(spec, sid, f, size)
@@ -416,7 +427,7 @@ def frame_cam(s, k, f, prev, which):
         if has_char and size != 'MACRO': hv_size = head_h() / FRAC[size]; hv_fit = (zmax - zmin) / 0.40 if size != 'CU' else (zmax - zmin) / 0.9
         else: hv_size = (zmax - zmin) / FRACP[size]; hv_fit = 0
         Hv = max(hv_size, hv_fit, (max(xs) - min(xs) + margin) / (0.78 * 0.5625), MINHV.get(size, {}).get(sid, 0))
-        Hv *= (1 + (s['push'] - 1) * which) * s.get('hvmul', 1.0)
+        Hv *= (1 + (s['push'] - 1) * which) * s.get('hvmul', 1.0) * KEYMUL.get(fsize, 1.0) * k.get('hvmul', 1.0)
         shift = 0.10 if size == 'CU' else 0.06
         C = Vector((cxy.x, cxy.y, (zmin + zmax) / 2))
         aim = C - Vector((0, 0, 1)) * shift * Hv
@@ -444,11 +455,11 @@ def frame_cam(s, k, f, prev, which):
             aim = aim + right_ * mid * d * 18.0 / lens
             if span > 0.78: d *= span / 0.78
         pos, tgt = aim + u * d, aim
-    if s['id'] in CAMOVR:
+    if s['id'] in CAMOVR and which in (0, 1):
         c0 = Vector(A[sid]['can_spot'].location) if 'can_spot' in A[sid] else HOME[('can', 'camp')]   # camp has no can_spot: use the crate-top can home
         pos, tgt = c0 + Vector(CAMOVR[s['id']][which][0]), c0 + Vector(CAMOVR[s['id']][which][1])
     camkeys.setdefault(s['id'], []).append((pos, tgt))
-    e = lookat_euler(pos, tgt, k['roll_deg'])
+    e = lookat_euler(pos, tgt, k.get('roll_deg', k0.get('roll_deg', 0)))
     if prev: e.make_compatible(prev)
     cam.location = pos; cam.rotation_euler = e; cam.data.lens = lens
     cam.data.dof.focus_distance = (tgt - pos).length
@@ -458,9 +469,12 @@ def frame_cam(s, k, f, prev, which):
     return e
 
 prev_e = None
-for s in SHOTS:
-    prev_e = frame_cam(s, s['camera'][0], s['f_in'], prev_e, 0)
-    prev_e = frame_cam(s, s['camera'][-1], s['f_out'] - 1, prev_e, 1)
+for s in SHOTS:   # every key: first at f_in, last at f_out-1, middle keys at their own f (a 2-key shot behaves as before)
+    ks = s['camera'] if len(s['camera']) > 1 else s['camera'] * 2   # a single key acts as start and end, as before
+    for i, k in enumerate(ks):
+        last = i == len(ks) - 1
+        f = s['f_in'] if i == 0 else (s['f_out'] - 1 if last else k['f'])
+        prev_e = frame_cam(s, k, f, prev_e, 0 if i == 0 else (1 if last else i / (len(ks) - 1)))
 # ---------------------------------------------------------------- clear set dressing out of each camera's way (keyed per shot)
 KEEP = ('ground', 'sky', 'hill', 'terrain', 'floor', 'backwall', 'tabletop', 'tablefront', 'river', 'water', 'tleg', 'flag', 'tree', 'cloud', 'light', 'wall', 'canopy', 'pole')
 cands = {}
@@ -510,10 +524,12 @@ dg = bpy.context.evaluated_depsgraph_get()
 CHP = tuple(c.name + '_' for c in CH.values())
 n_pull = 0
 for s in SHOTS:
-    for which, f in ((0, s['f_in']), (1, s['f_out'] - 1)):
+    ks_ = s['camera'] if len(s['camera']) > 1 else s['camera'] * 2
+    frs = [s['f_in']] + [k['f'] for k in ks_[1:-1]] + [s['f_out'] - 1]     # every camera key (a 2-key shot: first and last, as before)
+    for kix, f in enumerate(frs):
         if s['id'] in CAMOVR: continue
         sc.frame_set(f); dg = bpy.context.evaluated_depsgraph_get()
-        pos, tgt = camkeys[s['id']][which]; v = pos - tgt; L = v.length
+        pos, tgt = camkeys[s['id']][kix]; v = pos - tgt; L = v.length
         if L < 0.5: continue
         dirn = v / L; org = tgt + dirn * 0.1; rem = L - 0.1; hitd = None
         for _ in range(12):
@@ -526,17 +542,30 @@ for s in SHOTS:
             hitd = (loc - tgt).length; break
         if hitd is not None and hitd < L:
             newp = tgt + dirn * max(hitd - 0.12, 0.5); n_pull += 1
-            camkeys[s['id']][which] = (newp, tgt)
-            e = lookat_euler(newp, tgt, s['camera'][which]['roll_deg'])
+            camkeys[s['id']][kix] = (newp, tgt)
+            e = lookat_euler(newp, tgt, ks_[kix].get('roll_deg', 0))
             sc.frame_set(f); cam.location = newp; cam.keyframe_insert('location', frame=f)
 print('OCCLUSION pulled', n_pull)
 for idb in (cam, cam.data, cam.data.dof):
     pass
+LASTF = {s['f_out'] - 1 for s in SHOTS}
+MULTI = {f for s in SHOTS if len(s['camera']) > 2 for f in range(s['f_in'], s['f_out'] - 1)}
+ENDS = {f for s in SHOTS if len(s['camera']) > 2 for f in (s['f_in'], s['f_out'] - 1)}
+DIS_IN = {s['f_in'] for s in SHOTS if s['transition_in'] == 'dissolve'}               # shots that start from a dissolve
+DIS_OUT = {SHOTS[i]['f_in'] for i in range(len(SHOTS) - 1) if SHOTS[i + 1]['transition_in'] == 'dissolve'}   # 2-key shots ending in one
 for fc in chars._fcurves(cam) + chars._fcurves(cam.data):
     ks = fc.keyframe_points
     for i, kp in enumerate(ks):
-        if i % 2 == 1: kp.interpolation = 'CONSTANT'    # last key of a shot holds into the cut
+        f_ = round(kp.co.x)
+        if f_ in LASTF: kp.interpolation = 'CONSTANT'    # last key of a shot holds into the cut
+        elif f_ in MULTI: kp.interpolation = 'BEZIER'; kp.handle_left_type = kp.handle_right_type = 'AUTO_CLAMPED'   # glide through middle keys
+        elif CROSS and (f_ in DIS_IN or f_ in DIS_OUT):   # keep the camera moving through crossfades (the reference never stops on one)
+            kp.interpolation = 'LINEAR' if (f_ in DIS_IN and f_ in DIS_OUT) else 'SINE'
+            kp.easing = 'EASE_IN' if f_ in DIS_OUT else 'EASE_OUT'
         else: kp.interpolation = 'SINE'; kp.easing = 'EASE_IN_OUT'
+        if f_ in ENDS:   # first/last key of a multi-key shot: aim at the neighbour inside the shot, not at the other shot 1 frame away
+            kp.handle_left_type = kp.handle_right_type = 'VECTOR'
+    fc.update()
 
 
 
@@ -588,7 +617,7 @@ def key_transitions(whips, dips):
         for fr, v in ((f - 3, 0.0), (f - 2, 90.0), (f - 1, 170.0), (f, 0.0)): k(sz, fr, (v, 0.0))
     for f in dips:
         for fr, v in (((f - 4, 0.0), (f - 1, 1.0), (f, 0.45), (f + 2, 0.0)) if f > 0 else ((0, 1.0), (10, 0.0))): k(fa, fr, v)
-dips = [s['f_in'] for s in SHOTS if s['transition_in'] == 'dissolve']
+dips = [] if CROSS else [s['f_in'] for s in SHOTS if s['transition_in'] == 'dissolve']
 whips = [s['f_in'] for s in SHOTS if s['transition_in'] == 'whip' and s['f_in'] > 0]
 key_transitions(whips, dips)
 
@@ -619,6 +648,33 @@ elif MODE == 'frames':
     a, b = int(args[2]), int(args[3])
     if len(args) > 4: sc.eevee.taa_render_samples = int(args[4])
     for f in range(a, b): render_frame(f, os.path.join(OUT, 'f%04d.png' % f))
+elif MODE == 'handles':
+    # Crossfade handles. For every dissolve at frame f, render H frames of the OUTGOING camera after f (its move continued,
+    # the world held at f-1) and H frames of the INCOMING camera before f (its move run backwards, world held at f).
+    # dissolve.py then blends render/ and these handles into an 8-frame crossfade (H=4) centred on f.
+    H = int(args[2]) if len(args) > 2 else 4
+    if len(args) > 3: sc.eevee.taa_render_samples = int(args[3])
+    hc = bpy.data.objects.new('cam_handle', cam.data.copy()); sc.collection.objects.link(hc)
+    if hc.data.animation_data: hc.data.animation_data_clear()
+    def pose(f):
+        sc.frame_set(f)
+        return (cam.matrix_world.to_translation(), cam.matrix_world.to_quaternion(), cam.data.lens, cam.data.dof.focus_distance, cam.data.dof.aperture_fstop)
+    def extrap(a, b, n):   # pose b continued n frames along the motion a -> b (n < 0 runs backwards)
+        d = a[1].rotation_difference(b[1]); ax, ang = d.to_axis_angle()
+        q = b[1] @ Quaternion(ax, ang * n)
+        return (b[0] + (b[0] - a[0]) * n, q, b[2] + (b[2] - a[2]) * n, b[3], b[4])
+    def shoot(world_f, p, path):
+        sc.camera = hc; sc.frame_set(world_f)
+        hc.matrix_world = Matrix.Translation(p[0]) @ p[1].to_matrix().to_4x4()
+        hc.data.lens = p[2]; hc.data.dof.focus_distance = p[3]; hc.data.dof.aperture_fstop = p[4]
+        sc.render.filepath = path; bpy.ops.render.render(write_still=True); sc.camera = cam
+    for s in SHOTS[1:]:
+        if s['transition_in'] != 'dissolve': continue
+        f = s['f_in']
+        a, b = pose(f - 2), pose(f - 1)
+        for i in range(H): shoot(f - 1, extrap(a, b, i + 1), os.path.join(OUT, f'out_{f:04d}_{i}.png'))
+        a, b = pose(f + 1), pose(f)
+        for i in range(H): shoot(f, extrap(a, b, H - i), os.path.join(OUT, f'in_{f:04d}_{i}.png'))
 elif MODE == 'list':
     for f in [int(x) for x in open(args[2]).read().split()]: render_frame(f, os.path.join(OUT, 'f%04d.png' % f))
 elif MODE == 'save':

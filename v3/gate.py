@@ -6,14 +6,20 @@ if os.path.exists(G + '/proj.txt'):
     for l in open(G + '/proj.txt'):
         m = re.match(r'PROJ (s\d+) (.*)', l)
         if m: proj[m.group(1)] = eval(m.group(2))
-BAND = {'day': (105, 125, 32, 48), 'night': (50, 65, 40, 46), 'interior': (95, 105, 33, 42)}
+# YAVG low/high, SATAVG low/high per mood = p10..p90 of 738 reference frames measured exactly like this
+# (signalstats on 1080x1920 RGB stills), from references/reference-style.md section 5. Night is NOT dark (median 85)
+# and is the most saturated mood (blue); interiors are dimmer and less saturated than day. Old values were 1 fps guesses.
+BAND = {'day': (99, 146, 22, 44), 'dusk': (114, 153, 18, 35), 'interior': (67, 139, 19, 35), 'night': (69, 118, 29, 61)}
+ALIAS = {'night_in': 'night', 'night_card': 'night', 'night_warm': 'night', 'day_in': 'day', 'day_hot': 'day',
+         'interior_in': 'interior', 'interior_lid': 'interior'}
+band = lambda m: BAND.get(m) or BAND.get(ALIAS.get(m, ''), BAND['day'])
 rows = []; npass = 0
 for s in shots:
     f = f"{G}/{s['id']}.png"
     if not os.path.exists(f): continue  # partial run: gate.sh s01 s05
     o = subprocess.run(['ffmpeg', '-i', f, '-vf', 'signalstats,metadata=print', '-f', 'null', '-'], capture_output=True, text=True).stderr
     v = {k: float(re.search(k + r'=([\d.]+)', o).group(1)) for k in ('SATAVG', 'YAVG', 'YLOW', 'YHIGH')}
-    ylo, yhi, slo, shi = BAND[s['mood']]
+    ylo, yhi, slo, shi = band(s['mood'])
     why = []
     tol = 8 if s['size'] in ('MACRO',) else 5
     if not (ylo - tol <= v['YAVG'] <= yhi + tol * 2): why.append('Y')

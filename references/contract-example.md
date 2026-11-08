@@ -1,12 +1,12 @@
 # v3 build contract: four parallel agents, one integrator
 
 Goal: a 60.5 s (1815 f @ 30 fps) 9:16 story Short that matches the reference look. Blender 5.2 headless, EEVEE, GPU, Python modules. CC0 assets only.
-The **numbers to hit** (ffmpeg signalstats on the final 1080x1920 frames):
-- saturation ≥ 38 (ref 41.9);
-- average luma 95–115 (ref 105);
-- luma 10–90% spread ≥ 115;
-- nothing blown to pure white;
+The **numbers to hit** come from `references/reference-style.md` (every frame of 4 reference videos; checked by `audit.py`):
+- signalstats per mood (p10–p90): day YAVG 99–146, SATAVG 22–44; night YAVG 69–118, SATAVG 29–61; interior YAVG 67–139, SATAVG 19–35;
+- luma 10–90% spread about 117 (111–127);
+- nothing blown to pure white (YHIGH > 232 on under 5% of frames);
 - no key character cut by the frame.
+*(This contract's first version used 1 fps numbers, saturation ≥ 38 and luma 95–115. Measured on every frame, the same reference has SATAVG 31.4 and YAVG 116: see lesson 51.)*
 
 Read the reference notes first: `D:\claude\videos\03-claude-animated-shorts\1-planning\research\reference-video\ricks-7xS87iActkU\BREAKDOWN.md` and its `sheet-1fps-01.jpg` / `sheet-1fps-02.jpg` (the target), plus `ref.mp4` in the same folder (extract any frames you need with ffmpeg).
 
@@ -53,8 +53,8 @@ Workspace: `D:\claude\videos\03-claude-animated-shorts\4-short-v3\`. **Each agen
 **shots.json** (agent SHOTS, a data file, no Blender)
 - An array of shots `{id, set, f_in, f_out, transition_in: 'travel'|'whip'|'dissolve', camera:[{f, pos:[x,y,z], target:[x,y,z] or anchor, lens, roll_deg}], actions:[{f, char, place|pose|face|hold, args}], props:[{f, prop, action:'appear'|'dent'|'pop'|'bend', args}], fx:[{f, type, at}], mood}`.
 - Positions are in set-local metres from the set origin.
-- The shot size changes every 2–3 s: extreme wide, then medium, then close-up with faces at 30–40% of the frame, then macro inserts. Use tilts, crane and low angles. Moves are eased over 20+ frames.
-- No hard cuts. Use travel, whip or dissolve.
+- About one picture shot every 4.3 s (none over 8.6 s). Inside each shot the camera keeps moving and changes size about every 1.35 s through camera keys with `size`, mostly one step at a time. Screen time: XW 19%, WIDE 17%, MED 40%, CU 13.5%, MACRO 11%. Faces at 30–40% of the frame only in CU. Use tilts, crane and low angles. Moves are eased over 20+ frames.
+- Join shots with `dissolve` (8-frame crossfade, rendered with `DISSOLVE=cross`); 0–2 `cut` for an insert or the final impact; no whips, no dip to black.
 - The word syncs come from the timing json.
 
 **integrator** (later): `scene.py` builds everything from the four modules and shots.json, then runs the stills gate and the render.
