@@ -7,7 +7,8 @@
 //  - words appear as they are spoken and the line re-centres as each one arrives; a word enters blurred and is sharp one frame later
 //  - the word being spoken is white Bold; earlier words in the card are warm grey Regular; 2 empty frames between cards
 //  - "key words" (cues.json keyWords: word stems) stay white Bold inside a blue text-selection box with two round handles
-//  - no outline; a soft dark shadow keeps it readable on lighter backgrounds; no pop or scale animation
+//  - house rule (user, 2026-11): every word and callout has a black outline (5 px at 1080) over the soft dark shadow, so
+//    it reads on any background; no pop or scale animation
 // Callouts (cues.json "overlays"): stat (big number + small label), note (small grey footnote), tag (CAPS label + leader line),
 //  counter (small label over a big number, for example "age" / "30", with a thin rule under it)
 import fs from 'node:fs'; import path from 'node:path';
@@ -26,6 +27,7 @@ const DEF = {            // measured on the 6 reference reels at 30 fps (referen
   blurIn: true,          // each word enters blurred and sharpens in one frame
   white: 'FFFFFF', grey: '74706C', blue: '3D7BFF', boxFillAlpha: 0xC8,   // RGB hex; alpha 00 = opaque, FF = invisible
   shadow: true,
+  outline: 5,            // black outline on every word and callout (px at 1080); 0 = the reference's shadow only
 };
 
 const bgr = rgb => `&H${rgb.slice(4, 6)}${rgb.slice(2, 4)}${rgb.slice(0, 2)}&`;
@@ -94,26 +96,34 @@ function when(spec, words, fallback) {
   if (!w) throw new Error(`overlay time "${spec}": word not found (use "line:wordStem" or seconds)`);
   return w.start;
 }
-function overlays(list, words, o) {
+export function overlays(list, words, o = DEF) {
   const ev = [];
+  const ol = o.outline ?? 5, font = o.calloutFont ?? 'Inter';
+  // every callout text: a soft dark shadow layer, then the text itself with a black outline (house rule)
+  const push = (t, tags, text) => {
+    if (ol) ev.push(`Dialogue: 4,${t},X,,0,0,0,,{${tags}\\c&H000000&\\3c&H000000&\\bord${ol * 2}\\shad0\\blur5\\alpha&H50&}${text}`);
+    ev.push(`Dialogue: 5,${t},X,,0,0,0,,{${tags}\\bord${ol}\\3c&H000000&\\shad0}${text}`);
+  };
+  const line = (t, shape, colour) =>     // rules and leader lines get the outline too
+    ev.push(`Dialogue: 5,${t},X,,0,0,0,,{\\an7\\pos(0,0)\\p1\\bord${ol ? Math.max(2, ol / 2) : 0}\\3c&H000000&\\shad0\\c${bgr(colour)}}${shape}{\\p0}`);
   for (const ov of list || []) {
     const a = when(ov.at, words, 0), b = when(ov.until, words, a + 3);
     const t = `${ts(a)},${ts(b)}`, x = ov.x ?? 70, y = ov.y ?? 1060;
     if (ov.type === 'stat') {          // "1%" with "of body weight, lost as water" under it, left aligned
-      ev.push(`Dialogue: 4,${t},X,,0,0,0,,{\\an1\\pos(${x},${y})\\fnInter\\b1\\fs${ov.size ?? 190}\\c${bgr(o.white)}}${ov.text}`);
-      if (ov.label) ev.push(`Dialogue: 4,${t},X,,0,0,0,,{\\an7\\pos(${x + 6},${y + 14})\\fnInter\\b0\\fs${ov.labelSize ?? 40}\\c${bgr(ov.labelColour ?? 'D8D8D8')}}${ov.label}`);
+      push(t, `\\an1\\pos(${x},${y})\\fn${font}\\b1\\fs${ov.size ?? 190}\\c${bgr(o.white)}`, ov.text);
+      if (ov.label) push(t, `\\an7\\pos(${x + 6},${y + 14})\\fn${font}\\b0\\fs${ov.labelSize ?? 40}\\c${bgr(ov.labelColour ?? 'D8D8D8')}`, ov.label);
     } else if (ov.type === 'counter') { // small "age" over a big "30", with a thin rule under it, right aligned
-      ev.push(`Dialogue: 4,${t},X,,0,0,0,,{\\an3\\pos(${x},${y - (ov.size ?? 150) * 0.95})\\fnInter\\b0\\fs${ov.labelSize ?? 36}\\c${bgr('C8C8C8')}}${ov.label ?? ''}`);
-      ev.push(`Dialogue: 4,${t},X,,0,0,0,,{\\an3\\pos(${x},${y})\\fnInter\\b0\\fs${ov.size ?? 150}\\c${bgr(o.white)}}${ov.text}`);
+      push(t, `\\an3\\pos(${x},${y - (ov.size ?? 150) * 0.95})\\fn${font}\\b0\\fs${ov.labelSize ?? 36}\\c${bgr('C8C8C8')}`, ov.label ?? '');
+      push(t, `\\an3\\pos(${x},${y})\\fn${font}\\b0\\fs${ov.size ?? 150}\\c${bgr(o.white)}`, ov.text);
       const w = ov.ruleWidth ?? 190;
-      ev.push(`Dialogue: 4,${t},X,,0,0,0,,{\\an7\\pos(0,0)\\p1\\bord0\\shad0\\c${bgr('C8C8C8')}}${rect(x - w, y + 18, w, 3)}{\\p0}`);
+      line(t, rect(x - w, y + 18, w, 3), 'C8C8C8');
     } else if (ov.type === 'note') {   // small grey footnote, bottom left: "Body water shown in magenta"
-      ev.push(`Dialogue: 4,${t},X,,0,0,0,,{\\an1\\pos(${ov.x ?? 70},${ov.y ?? 1560})\\fnInter\\b0\\fs${ov.size ?? 30}\\c${bgr(ov.colour ?? 'B4B4B4')}}${ov.text}`);
+      push(t, `\\an1\\pos(${ov.x ?? 70},${ov.y ?? 1560})\\fn${font}\\b0\\fs${ov.size ?? 30}\\c${bgr(ov.colour ?? 'B4B4B4')}`, ov.text);
     } else if (ov.type === 'tag') {    // "FOREARM FLEXORS": caps, letter-spaced, optional leader line to [x2, y2]
-      ev.push(`Dialogue: 4,${t},X,,0,0,0,,{\\an1\\pos(${x},${y})\\fnInter\\b1\\fsp4\\fs${ov.size ?? 34}\\c${bgr(o.white)}}${String(ov.text).toUpperCase()}`);
+      push(t, `\\an1\\pos(${x},${y})\\fn${font}\\b1\\fsp4\\fs${ov.size ?? 34}\\c${bgr(o.white)}`, String(ov.text).toUpperCase());
       if (ov.to) {
         const [x2, y2] = ov.to, dx = x2 - x, dy = y2 - (y - 50), len = Math.hypot(dx, dy) || 1, nx = -dy / len * 1.5, ny = dx / len * 1.5;
-        ev.push(`Dialogue: 4,${t},X,,0,0,0,,{\\an7\\pos(0,0)\\p1\\bord0\\shad0\\c${bgr(o.white)}}m ${x + nx} ${y - 50 + ny} l ${x2 + nx} ${y2 + ny} ${x2 - nx} ${y2 - ny} ${x - nx} ${y - 50 - ny}{\\p0}`);
+        line(t, `m ${x + nx} ${y - 50 + ny} l ${x2 + nx} ${y2 + ny} ${x2 - nx} ${y2 - ny} ${x - nx} ${y - 50 - ny}`, o.white);
       }
     } else throw new Error(`unknown overlay type ${ov.type} (stat, counter, note, tag)`);
   }
@@ -142,7 +152,7 @@ export function buildExplainerAss(words, T, CF = {}) {
         const enter = entering ? '\\blur7\\alpha&H70&\\t(0,33,\\blur0\\alpha&H00&)' : '';
         const style = `\\an5\\pos(${w.cx.toFixed(1)},${w.cy.toFixed(1)})\\fnInter\\fs${o.size}\\fscx${o.scaleX ?? 100}\\b${lit ? 1 : 0}\\c${bgr(lit ? o.white : o.grey)}`;
         if (o.shadow) ev.push(`Dialogue: 0,${ts(a)},${ts(b)},X,,0,0,0,,{${style}\\c&H000000&\\alpha&H70&\\bord6\\3c&H000000&\\3a&H90&\\blur10}${clean(w.w)}`);
-        ev.push(`Dialogue: 2,${ts(a)},${ts(b)},X,,0,0,0,,{${style}${enter}}${clean(w.w)}`);
+        ev.push(`Dialogue: 2,${ts(a)},${ts(b)},X,,0,0,0,,{${style}\\bord${o.outline ?? 0}\\3c&H000000&\\shad0${enter}}${clean(w.w)}`);
         if (key) {
           const bw = textWidth(clean(w.w), o.size, 'bold') * (o.scaleX ?? 100) / 100 + o.size * 0.3, bh = o.size * 0.98;
           const bx = w.cx - bw / 2, by = w.cy - bh / 2 - o.size * 0.02;

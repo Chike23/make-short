@@ -263,17 +263,20 @@ def shadows(R, behind=0.04):
     return R['casters']
 
 
-def blob_shadow(R, rx=0.46, ry=0.2, at=(0.1, 0.12), color='#2a1626', alpha=0.55, frames=None):
+def blob_shadow(R, rx=0.46, ry=0.2, at=(0.1, 0.12), color='#2a1626', alpha=0.55, frames=None, ground=None):
     """Soft drop shadow on the floor under her (a 2D character in a 3D world): a dark radial blur, slightly behind and
-    to the side of her feet. It shrinks and fades as she leaves the ground (root height), so hops read."""
+    to the side of her feet. It follows her across the set, sits on the ground under her (ground(x, y) = height,
+    for steps and patios), and shrinks and fades as she leaves the ground, so hops read."""
     o = F.glow(f"{R['name']}_blob", 0, 0, rx, ry, color, None, 0.0, power=1.2, alpha=alpha)
     o.rotation_euler = (0, 0, 0); o.location = (at[0], at[1], 0.026)
     o.visible_shadow = False
     if frames:
         sc = bpy.context.scene; root = R['j']['root']
         for f in range(frames[0], frames[1] + 1):
-            sc.frame_set(f); h = max(0.0, root.location[2])
+            sc.frame_set(f); x, y, z = root.location
+            g = ground(x, y) if ground else 0.0; h = max(0.0, z - g)
             k = max(0.55, 1 - 3.0 * h)
+            for i, v in ((0, x + at[0]), (1, y + at[1]), (2, g + 0.026)): F.key(o, 'location', v, f, 'LINEAR', 'AUTO', i)
             F.key(o, 'scale', (k, k, 1), f, 'LINEAR'); F.key(o, 'color', alpha * k, f, 'LINEAR', 'AUTO', 3)
     return o
 
@@ -284,3 +287,83 @@ def face_camera(R, cam):
     c = R['j']['root'].constraints.new('LOCKED_TRACK')
     c.name = 'face_camera'; c.target = cam; c.track_axis = 'TRACK_NEGATIVE_Y'; c.lock_axis = 'LOCK_Z'
     return c
+
+
+# ------------------------------------------------------------------ getting around: walk, jog, step up
+def _smooth(t): return t * t * (3 - 2 * t)
+
+
+def travel(R, f0, f1, path, ground=None, ease=(True, True)):
+    """Move her root along path [(x, y), ...] (set coordinates) between f0 and f1, easing in and out.
+    ground(x, y) gives the floor height (steps, patios); the root rides it."""
+    from mathutils import Vector
+    root = R['j']['root']; P = [Vector(p) for p in path]
+    segs = [(P[i + 1] - P[i]).length for i in range(len(P) - 1)]; total = sum(segs) or 1e-6
+    def at(u):
+        d = u * total
+        for i, sl in enumerate(segs):
+            if d <= sl or i == len(segs) - 1: return P[i].lerp(P[i + 1], min(1.0, d / sl if sl else 0))
+            d -= sl
+    n = max(1, f1 - f0)
+    for f in range(f0, f1 + 1):
+        t = (f - f0) / n
+        if ease[0] and ease[1]: u = _smooth(t)
+        elif ease[0]: u = 2 * _smooth(t / 2)
+        elif ease[1]: u = 2 * _smooth(0.5 + t / 2) - 1
+        else: u = t
+        p = at(u)
+        F.key(root, 'location', p.x, f, 'LINEAR', 'AUTO', 0); F.key(root, 'location', p.y, f, 'LINEAR', 'AUTO', 1)
+        if ground: F.key(root, 'location', ground(p.x, p.y), f, 'LINEAR', 'AUTO', 2)
+    return at
+
+
+def cycle(R, f0, f1, step=8, bob=0.022, lift=0.9, sway=2.5, arms=8.0, arm_base=(9, 9), fore=12, carry=False,
+          ground=None):
+    """A front-facing walk (step 8) or jog (step 5-6, bigger bob and lift): the body bobs, legs lift in turn, the hips
+    sway over the standing leg and the arms swing against the legs. Use with travel() for the same frames.
+    arms=None leaves the arms in whatever pose they hold (hands clasped, a prop)."""
+    J = R['j']; root = J['root']; sc = bpy.context.scene
+    if carry: arms, arm_base, fore = 3.0, (5, 5), 4
+    f, k = f0, 0
+    while f < f1:
+        up = 'sl' if k % 2 == 0 else 'sr'; down = 'sr' if up == 'sl' else 'sl'
+        mid = f + step / 2
+        sc.frame_set(int(f)); x, y = root.location[0], root.location[1]
+        g0 = ground(x, y) if ground else 0.0
+        sc.frame_set(int(mid)); gm = ground(root.location[0], root.location[1]) if ground else 0.0
+        F.key(root, 'location', g0, f, 'BEZIER', 'AUTO', 2); F.key(root, 'location', gm + bob, mid, 'BEZIER', 'AUTO', 2)
+        for s_, v in ((up, lift), (down, 1.0)):
+            j = J[f'thigh_{s_}']; F.key(j, 'scale', 1.0, f, 'BEZIER', 'AUTO', 2); F.key(j, 'scale', v, mid, 'BEZIER', 'AUTO', 2)
+        F.key(J['hips'], 'rotation_euler', 0.0, f, 'BEZIER', 'AUTO', 1)
+        F.key(J['hips'], 'rotation_euler', math.radians(sway if down == 'sr' else -sway), mid, 'BEZIER', 'AUTO', 1)
+        F.key(J['torso'], 'rotation_euler', math.radians(-0.6 * (sway if down == 'sr' else -sway)), mid, 'BEZIER', 'AUTO', 1)
+        for s_, sg in (SIDES.items() if arms is not None else ()):   # arm opposite the lifted leg swings out
+            swing = arms if s_ != up else -arms * 0.5
+            base = arm_base[0] if s_ == 'sl' else arm_base[1]
+            F.key(J[f'arm_{s_}'], 'rotation_euler', math.radians((base + swing) * sg), mid, 'BEZIER', 'AUTO', 1)
+            F.key(J[f'fore_{s_}'], 'rotation_euler', math.radians((fore + (swing if swing > 0 else 0)) * sg), mid, 'BEZIER', 'AUTO', 1)
+        f += step; k += 1
+    end = f1
+    sc.frame_set(end); gx = ground(root.location[0], root.location[1]) if ground else 0.0
+    F.key(root, 'location', gx, end, 'BEZIER', 'AUTO', 2)
+    for s_ in SIDES:
+        F.key(J[f'thigh_{s_}'], 'scale', 1.0, end, 'BEZIER', 'AUTO', 2)
+    F.key(J['hips'], 'rotation_euler', 0.0, end, 'BEZIER', 'AUTO', 1); F.key(J['torso'], 'rotation_euler', 0.0, end, 'BEZIER', 'AUTO', 1)
+
+
+def walk(R, f0, f1, path, step=8, ground=None, ease=(True, True), **kw):
+    at = travel(R, f0, f1, path, None, ease)          # cycle() keys the height (ground + bob) once per step
+    cycle(R, f0, f1, step=step, ground=ground, **kw)
+    return at
+
+
+def jog(R, f0, f1, path, ground=None, ease=(False, True), **kw):
+    kw = {**dict(step=6, bob=0.045, lift=0.84, sway=3.5, arms=16.0, arm_base=(12, 12), fore=60), **kw}
+    return walk(R, f0, f1, path, ground=ground, ease=ease, **kw)
+
+
+def hold(R, obj, side='sr', offset=(0.0, -0.06, -0.055)):
+    """Put a 3D prop (bag, dumbbell) in her hand: it follows the hand joint from then on."""
+    j = R['j'][f'hand_{side}']
+    obj.parent = j; obj.location = offset; obj.matrix_parent_inverse.identity()
+    return obj

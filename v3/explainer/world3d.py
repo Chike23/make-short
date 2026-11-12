@@ -184,20 +184,31 @@ def dumbbell(name, loc, rot=(0, 0, 0), scale=1.0, c='WORLD'):
 # a cosy sunset living room in the reference's palette: warm key, cool lilac fill, lamp and window as practicals
 look.MOODS['living'] = dict(top=(0.40, 0.33, 0.38), hor=(0.62, 0.46, 0.40), wstr=0.5,
                             sun=((1.0, 0.8, 0.6), 0.0, (-40, 50)), fill=((0.70, 0.72, 1.0), 30.0), lamp=((1.0, 0.70, 0.42), 70.0),
-                            exp=0.0, sat=1.12, con=0.30, gam=1.12, gain=(0.98, 0.95, 0.92), lift=(0.97, 0.975, 1.06), vig=0.38, haze=0.05)
+                            exp=0.0, sat=0.85, con=0.30, gam=1.0, gain=(0.9, 0.86, 0.84), lift=(0.9, 0.9, 0.98), vig=0.38, haze=0.05)
+
+
+# the park at golden hour: the skill's dusk with the saturation the 2D lead can take (her skin went red at 1.95) and a
+# brighter grade (Rick's dusk band is YAVG 114-153)
+look.MOODS['park_dusk'] = dict(look.MOODS['dusk'], sat=1.25, gain=(0.98, 0.9, 0.85))
+
+look.MOODS['gym'] = dict(top=(0.52, 0.58, 0.72), hor=(0.78, 0.74, 0.70), wstr=0.55,
+                         sun=((1.0, 0.95, 0.9), 0.0, (-40, 50)), fill=((1.0, 0.86, 0.72), 25.0), lamp=((1.0, 0.8, 0.6), 0.0),
+                         exp=0.0, sat=1.1, con=0.30, gam=1.12, gain=(0.96, 0.97, 1.0), lift=(0.97, 0.98, 1.06), vig=0.38, haze=0.04)
 
 
 def light(mood='living', f0=1, f1=250, lamp_at=LAMP_AT, key_at=(-1.9, -2.3, 2.9), key_to=(0.0, 0.0, 1.0), key_energy=500.0,
-          window=(0.9, 1.75, 1.7), window_energy=90.0):
-    """Mood rig from look.apply_mood, plus a warm key light. Only the key casts shadows (her shadow, the furniture
-    shadows); the rest light without shadows, which keeps a frame at a few seconds. No fog (it is the slowest pass)."""
+          key_color=(1.0, 0.86, 0.70), key_size=1.6, window=(0.9, 1.75, 1.7), window_energy=90.0, shadow='key'):
+    """Mood rig from look.apply_mood, plus an optional key light. Only ONE light casts shadows (`shadow`: 'key'
+    indoors, 'LOOK_Sun' outdoors); the rest light without shadows, which keeps a frame at a few seconds. No fog
+    (it was most of the frame time; the compositor haze still gives depth)."""
     sc = bpy.context.scene
     look.apply_mood(sc, mood, f0, f1, lamp_at=lamp_at, fill_x=0.0)
     w = sc.world; nt = w.node_tree
     for l in [l for l in nt.links if l.to_node.bl_idname == 'ShaderNodeOutputWorld' and l.to_socket.name == 'Volume']: nt.links.remove(l)
-    kd = bpy.data.lights.new('key', 'AREA'); kd.size = 1.6; kd.energy = key_energy; kd.color = (1.0, 0.86, 0.70)
-    k = bpy.data.objects.new('key', kd); sc.collection.objects.link(k); k.location = key_at
-    k.rotation_euler = (Vector(key_to) - Vector(key_at)).to_track_quat('-Z', 'Y').to_euler()
+    if key_energy:
+        kd = bpy.data.lights.new('key', 'AREA'); kd.size = key_size; kd.energy = key_energy; kd.color = key_color
+        k = bpy.data.objects.new('key', kd); sc.collection.objects.link(k); k.location = key_at
+        k.rotation_euler = (Vector(key_to) - Vector(key_at)).to_track_quat('-Z', 'Y').to_euler()
     if window:                                           # warm sunset spilling in through the window
         ld = bpy.data.lights.new('win_light', 'AREA'); ld.shape = 'RECTANGLE'; ld.size, ld.size_y = 1.1, 1.4
         ld.energy = window_energy; ld.color = (1.0, 0.64, 0.40)
@@ -205,8 +216,8 @@ def light(mood='living', f0=1, f1=250, lamp_at=LAMP_AT, key_at=(-1.9, -2.3, 2.9)
         o.location = window; o.rotation_euler = (math.radians(-80), 0, 0)
     for o in sc.objects:
         if o.type == 'LIGHT':
-            o.data.use_shadow = (o.name == 'key')
-            if o.data.type == 'SUN' and o.data.energy == 0: o.hide_render = True
+            o.data.use_shadow = (o.name == shadow)
+            if o.data.energy == 0 and not (o.animation_data and o.animation_data.action): o.hide_render = True
     for kname, v in dict(shadow_ray_count=1, shadow_step_count=4).items():
         try: setattr(sc.eevee, kname, v)
         except Exception: pass
@@ -217,9 +228,138 @@ def grade():
     return look.setup_compositor(bpy.context.scene)
 
 
+def rick_look(keep=('lady',), world_ink=False, depth_ink=0.6, smooth=True):
+    """Rick's world, studied frame by frame on R1 (2026-11): the SET is smoothly lit 3D (sun and sky light roll
+    across surfaces; no cel steps), it has NO outlines (only the 2D characters are drawn with lines), cast shadows
+    from one strong sun, haze to a bright horizon, and shallow depth of field on medium and close shots (the
+    camera's job: see scene_trial.finish). Call after the set, the character and the lights exist.
+      - smooth: the skill's toon ramp (cel steps) becomes a soft shadow -> mid -> lit gradient on the set
+      - world_ink False: the inverted-hull outlines on set objects are switched off
+      - depth_ink: strength of the compositor's depth lines (1 = off, 0.15 = the skill's full ink)"""
+    sc = bpy.context.scene; n_ink = n_ramp = 0
+    for o in sc.objects:
+        if o.name.startswith(keep) or o.type != 'MESH': continue
+        md = o.modifiers.get('LOOK_ink')
+        if md and not world_ink: md.show_render = False; md.show_viewport = False; n_ink += 1
+    if smooth:
+        for m in bpy.data.materials:
+            if not m.node_tree or m.name.startswith(keep): continue
+            for n in m.node_tree.nodes:
+                if n.bl_idname != 'ShaderNodeValToRGB': continue
+                els = n.color_ramp.elements
+                if len(els) != 5 or abs(els[2].position - 0.27) > 0.01: continue      # only look.py's toon ramp
+                sh, mid, lit = tuple(els[0].color), tuple(els[2].color), tuple(els[4].color)
+                while len(els) > 3: els.remove(els[-1])
+                for e, (p, c) in zip(els, ((0.0, sh), (0.32, mid), (0.72, lit))): e.position = p; e.color = c
+                n.color_ramp.interpolation = 'EASE'; n_ramp += 1
+    nt = sc.compositing_node_group
+    if nt is not None and 'inkmap' in nt.nodes: nt.nodes['inkmap'].inputs['To Max'].default_value = depth_ink
+    return {'ink_off': n_ink, 'ramps_smoothed': n_ramp}
+
+
 def set_kuwahara(size, frames):
     """look keys the painterly filter per mood (2 px); a 2D character keeps crisper eyes at 1. Call after light()."""
     nt = bpy.context.scene.compositing_node_group
     if nt is None or 'ku' not in nt.nodes: return
     s = nt.nodes['ku'].inputs['Size']
     for f in frames: s.default_value = size; s.keyframe_insert('default_value', frame=f)
+
+
+# ---------------------------------------------------------------- the park: Rick's riverside world (lib/sets.py builders)
+PARK_PATH = [(-0.55, 4.4), (-0.75, 2.2), (-0.78, 0.6), (-0.72, -0.9)]
+
+
+def park_ground(x, y):
+    """Floor height in the park: three stone steps up to a low terrace on the path ("climbs your stairs")."""
+    if abs(x + 0.75) > 1.25: return 0.0
+    if y > 1.75: return 0.0
+    if y > 1.45: return 0.12
+    if y > 1.15: return 0.24
+    if y > -1.9: return 0.36
+    return 0.0
+
+
+def park(mood='day'):
+    """Rick's world: sky dome with clouds (or a sunset sky), three rows of hills and a tree line, the river, a winding
+    path and grass patches (sets.terrain), far, framing and foreground trees (sets._dep_trees), dense ink-outlined
+    tufts, pebbles and flowers (sets._surface_ground). Plus a stone terrace with steps on the path, Poly Haven benches
+    and street lamps repainted toon, closer framing trees and edge bushes so wides never show bare ground."""
+    import sets as S
+    o = (0, 0, 0); c = coll('WORLD')
+    S._DUSK = (mood == 'dusk')
+    try:
+        if mood == 'dusk':
+            st = [(0.0, (1.0, 0.8, 0.5)), (0.12, (1.0, 0.66, 0.44)), (0.36, (0.82, 0.66, 0.74)), (0.68, (0.46, 0.54, 0.8)), (1.0, (0.3, 0.38, 0.68))]
+            d = S.sph(c, 'skydome', 140.0, o, S.sky_mat('sky_dusk', st, 140.0), (1, 1, 1), 24); d.visible_shadow = False
+            S.sph(c, 'sundisc', 8.0, (6, 118, 7), S.glow('sundisc', (1.0, 0.82, 0.5), 3.0), (1, 1, 1), 16)
+            S._surface_sky(c, o)
+        else:
+            S.sky(c, o, False)
+        S.hills(c, o, False)
+        S.terrain(c, o)
+        S._dep_trees(c, o, False)
+        S.tree(c, 'tree_n1', (-3.8, 3.2, 0), 5.2, 31); S.tree(c, 'tree_n2', (3.6, 5.0, 0), 5.8, 32); S.tree(c, 'tree_n3', (-6.5, 8.5, 0), 6.0, 33)
+        for i, (x, y, k) in enumerate(((-2.3, -4.6, 1.1), (2.4, -4.2, 1.2), (-3.2, -2.6, 0.9), (3.1, -2.2, 1.0))):   # frame-edge bushes
+            S.inked(S.sph(c, 'ebush', 0.75 * k, (x, y, 0.3 * k), S.M('leaf'), (1.3, 1.0, 0.8), 10, 0.14, 50 + i), 0.025)
+        stone = S.M('stone')
+        for i, (y, h) in enumerate(((1.6, 0.12), (1.3, 0.24), (1.0, 0.36))):
+            S.inked(S.box(c, f'step{i}', (2.5, 0.32, h), (-0.75, y, h / 2), stone, tile=0.45), 0.012)
+        S.inked(S.box(c, 'terrace', (2.5, 2.9, 0.36), (-0.75, -0.45, 0.18), stone, tile=0.45), 0.014)
+        for sx in (-1, 1):
+            for k in range(4): S.rock(c, 'trock', (-0.75 + sx * 1.42, 0.9 - k * 0.75, 0.1), 0.22 + 0.04 * (k % 2), 60 + k)
+        cols = dict(tl=(0.36, 0.52, 0.14), td=(0.14, 0.3, 0.14), peb=(0.66, 0.64, 0.6), flw=(1.0, 0.95, 0.55), patch=(0.5, 0.72, 0.38))
+        if mood == 'dusk': cols = dict(tl=(0.42, 0.48, 0.16), td=(0.16, 0.24, 0.12), peb=(0.6, 0.56, 0.58), flw=(1.0, 0.8, 0.45), patch=(0.3, 0.38, 0.14))
+        avoid = [(-0.75, y, 1.15) for y in (5.0, 3.5, 2.0, 0.5, -1.0, -2.0)]
+        S._surface_ground(c, o, 'pk', cols, avoid, (-8, 8, -6, 10), n_t=1100, n_p=140, n_f=70, patches=10, seed=81)
+    finally:
+        S._DUSK = False
+    furniture('painted_wooden_bench', (2.3, 1.6, 0), -20, 1.0)
+    furniture('painted_wooden_bench', (-3.0, -0.2, 0), 35, 1.0)
+    furniture('street_lamp_01', (1.9, 3.6, 0), 0, 1.0)
+    furniture('street_lamp_01', (-2.6, 5.8, 0), 0, 1.0)
+
+
+# ---------------------------------------------------------------- the gym: daylight from a window wall, rack, bench, mirror
+GYM_RACK = (1.35, 1.25)
+
+
+def gym():
+    floor = toon('gym_floor', '#9a6a44', 'wood_deck.png'); mat = toon('gym_mat', '#56657e')
+    wall = toon('gym_wall', '#e3d6c4'); band = toon('gym_band', '#4f6fb0'); steel = toon('gym_steel', '#3b3f4a'); trim = toon('gym_trim', '#f2ebe0')
+    box('floor', (14, 12, 0.1), (0, -1.0, -0.05), floor, ink=0)
+    box('mat', (4.4, 3.4, 0.03), (0.2, 0.4, 0.015), mat, ink=0.006)
+    box('ceiling', (14, 12, 0.1), (0, -1.0, 3.6), toon('gym_ceiling', '#cfc3b4'), ink=0)
+    box('wall_back', (14, 0.2, 3.6), (0, 3.1, 1.8), wall, ink=0)
+    box('band_back', (14, 0.05, 1.0), (0, 2.99, 0.5), band, ink=0); box('rail_back', (14, 0.06, 0.05), (0, 2.97, 1.02), trim, ink=0.005)
+    # left wall: tall windows with a bright sky behind them (the daylight key comes from here)
+    for n, sz, l in (('wl_a', (0.2, 6, 0.8), (-3.6, -0.5, 0.4)), ('wl_b', (0.2, 6, 0.6), (-3.6, -0.5, 3.3)),
+                     ('wl_c', (0.2, 0.5, 2.2), (-3.6, -3.25, 1.9)), ('wl_d', (0.2, 0.5, 2.2), (-3.6, 2.25, 1.9))):
+        box(n, sz, l, wall, ink=0)
+    for k, y in enumerate((-1.75, 0.0, 1.75)):
+        box(f'mull{k}', (0.12, 0.08, 2.2), (-3.55, y + 0.85, 1.9), steel, ink=0.006)
+    box('gym_sky', (0.05, 8, 4), (-4.6, -0.5, 1.9), sky_mat('gym_sky', [(0.0, '#d9ecff'), (0.5, '#9cc8f5'), (1.0, '#5d93e0')]), ink=0)
+    for k, (y, h) in enumerate(((-2.2, 1.1), (-1.2, 1.6), (0.4, 0.9), (1.5, 1.4))):
+        box(f'bld{k}', (0.3, 0.9, h), (-4.4, y, 0.8 + h / 2), emit(f'bld{k}', '#b8c6d8', 1.0), ink=0)
+    # right wall: a mirror
+    box('wall_right', (0.2, 12, 3.6), (4.2, -1.0, 1.8), wall, ink=0)
+    box('mirror', (0.04, 3.0, 1.8), (4.08, 0.9, 1.5), emit('mirror', '#cfe0ee', 0.85), ink=0.01)
+    # dumbbell rack (two tiers) with dumbbells
+    rx, ry = GYM_RACK
+    for x in (rx - 0.75, rx + 0.75):
+        box(f'rack_leg{x}', (0.06, 0.5, 0.95), (x, ry + 0.1, 0.475), steel, ink=0.006)
+    for z, yy in ((0.55, ry - 0.05), (0.88, ry + 0.22)):
+        box(f'rack_tier{z}', (1.6, 0.34, 0.05), (rx, yy, z), steel, ink=0.006)
+    for k in range(5):
+        dumbbell(f'db_rk_lo{k}', (rx - 0.6 + k * 0.3, ry - 0.05, 0.62), (0, 0, math.radians(90)), 0.9)
+        dumbbell(f'db_rk_hi{k}', (rx - 0.6 + k * 0.3, ry + 0.22, 0.95), (0, 0, math.radians(90)), 0.85)
+    # bench, kettlebells, plants, posters
+    pad = toon('pad', '#b5463c')
+    box('bench_pad', (1.3, 0.34, 0.1), (-1.5, 1.6, 0.48), pad, ink=0.008)
+    for x in (-2.0, -1.0): box(f'bench_leg{x}', (0.08, 0.3, 0.43), (x, 1.6, 0.215), steel, ink=0.005)
+    for k, x in enumerate((2.9, 3.25, 3.6)):
+        kb = cyl(f'kb{k}', 0.13 + 0.02 * k, 0.24 + 0.03 * k, (x, 2.5, 0.13 + 0.015 * k), toon(f'kb{k}', '#2f3540'), ink=0.006)
+    for k, (x, art) in enumerate(((-1.6, '#f0b04a'), (-0.6, '#6f8a86'), (0.6, '#d36b4a'))):
+        box(f'poster{k}', (0.6, 0.03, 0.8), (x, 2.98, 2.1), toon(f'poster_fr{k}', '#2a2a30'), ink=0.006)
+        box(f'poster_art{k}', (0.5, 0.02, 0.7), (x, 2.96, 2.1), toon(f'poster{k}', art), ink=0)
+    furniture('potted_plant_01', (-3.0, 2.5, 0), 0, 1.0)
+    furniture('potted_plant_04', (3.7, -1.6, 0), 0, 1.4)
