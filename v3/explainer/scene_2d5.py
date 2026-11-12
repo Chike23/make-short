@@ -137,10 +137,10 @@ def camera():
         for i, v in enumerate((x, y, z)): F.key(rig, 'location', v, f, interp, easing, i)
         if roll is not None: F.key(rig, 'rotation_euler', math.radians(roll), f, interp, easing, 1)
     def lens(f, v, interp='BEZIER', easing='AUTO'): F.key(cd, 'lens', v, f, interp, easing)
-    at(1, -0.12, -2.75, 1.36, 0); lens(1, 50)
+    at(-15, -0.10, -2.8, 1.36, 0); at(1, -0.12, -2.75, 1.36, 0); lens(1, 50)   # already moving on frame 1
     at(26, -0.15, -2.63, 1.35)
     lens(27, 50); lens(31, 57); lens(46, 55)                                  # punch-in on "three"
-    at(33, -0.14, -2.6, 1.38, -0.5); at(46, -0.15, -2.58, 1.34)               # rides the jump
+    at(33, -0.155, -2.6, 1.38, -0.5); at(46, -0.16, -2.58, 1.34)               # rides the jump
     at(86, -0.16, -2.5, 1.33, -1.8, interp='BEZIER', easing='EASE_IN')        # slow push while she worries
     lens(86, 56, easing='EASE_IN')
     at(90, 0.06, -2.5, 1.32, 3.0, interp='BACK', easing='EASE_OUT')           # whip pan on "But"
