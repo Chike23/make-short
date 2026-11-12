@@ -104,7 +104,7 @@ Show the brief in at most 8 lines: idea, style, length, story, script, voice, mu
 Follow the route. Every gate in it becomes a question here.
 - **Bean world:** `references/route-blender.md` steps 4-7 (contract, beats, shots, gate, render, mix, audit, critic, fix rounds) and 6b if Blender MCP is connected.
 - **2D:** `references/legacy-2d-route.md` steps 3-8 (character sheet, storyboard, render, QA, receipt).
-- **Anatomy explainer:** the route its style file names once its status is **ready**.
+- **Anatomy explainer:** `references/route-explainer.md` (Blender stills + `explainer/compose.py`), once its style file says **ready**.
 
 The gates:
 1. **Plan:** show a short shot plan (shots, places, key moments, callouts), then ask "Looks right?" **Yes** / **Change something**.

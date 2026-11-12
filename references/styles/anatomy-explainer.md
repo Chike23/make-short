@@ -78,7 +78,9 @@ Also seen: small grey **source credits** (author, journal, year) next to the ima
 | Narration | **3.3 words a second** (3.2-3.8); about 0.23 s between word onsets | 3.75 words a second |
 | Not measured | music and sound effects, voice tone, exact shot sizes per frame | |
 
-## 5. How we build it (the user picks where the stills come from, once)
+## 5. How we build it
+**Chosen 12 Nov 2026: B, Blender stills.** Build steps: `references/route-explainer.md`. Option A stays here for reference.
+
 The measurement shows the motion is mostly the edit: still pictures, slow zooms, layers fading in, preset transitions. So every option shares one **shot builder** that Claude writes in code (ffmpeg; section 6). The choice is only where the pictures come from:
 
 | | **A. Image model stills** (closest to the reference) | **B. Blender stills** (free, this skill's engine) |
@@ -93,10 +95,10 @@ The measurement shows the motion is mostly the edit: still pictures, slow zooms,
 - [x] Captions and callouts, tuned to the measurement and checked side by side (`captions-explainer.mjs`)
 - [x] 30 fps measurement of the 6 reels (`measure/pipeline.py prep`; results in sections 2-4b)
 - [x] Confirmed how they are made (section 2), so **route A changes**: stills animated in the edit. Image-to-video only for the few body moves
-- [ ] Pick where the stills come from: an image model (paid or free tier, used by the user or through an API key) or Blender renders
-- [ ] Shot builder: one still (plus optional X-ray / overlay layers) per shot; slow push-in or pull-out at 2-6% a second; layers that fade in on a word; 3-frame crossfades, vertical slides and dips between shots; written as ffmpeg filter graphs from a `shots.json`
-- [ ] Lead character: our own design, with a reference sheet: front, side, three-quarter and X-ray versions
-- [ ] Rooms: home gym, living room (lamp + window), kitchen; plus a dark "stage" for props and infographics
+- [x] Where the stills come from: **Blender** (route B)
+- [x] Shot builder: `v3/explainer/compose.py` (stills + layers + slow zooms + crossfade / push / cut / fade / dip), tested end to end with the captions
+- [ ] Blender kit: the lead character (our own design) with poses, plus an X-ray version (skeleton, organs, muscles) that lines up with the body
+- [ ] Blender kit: rooms (home gym, living room with lamp + window, kitchen), a dark "stage" for props, the warm low-key light and grade (luma about 19%, top band about 10%)
 - [ ] Magnifier circle and source-credit callouts; phone-UI call-to-action template
 - [ ] `critic/targets.json` for this style: `references/styles/anatomy-explainer.targets.json` (copy it into each project)
 - [ ] One 30 s test Short, then the critic loop
