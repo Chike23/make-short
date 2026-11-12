@@ -1,7 +1,7 @@
 """The 14 s test Short: 4 shots. Run in Blender after kit.py:  exec(kit); exec(this); shoot('s01') ... or shoot_all().
 Writes renders/<id>.png (+ <id>_xray.png) at 1350x2400 into OUT."""
 import os, math, time
-OUT = os.path.expanduser('~/Downloads/make-short-test/renders')
+OUT = os.path.expanduser('~/shorts/anatomy-test/renders')   # the project's renders folder (the first test used ~/Downloads/make-short-test)
 AT, ROT = (-0.25, -0.15, 0.0), 0.35            # where the lead stands in the living room
 
 
