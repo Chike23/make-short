@@ -2,7 +2,7 @@
 
     python audit.py [final.mp4]        run in the project folder P; default out/short-v3-final.mp4
 
-Reads shots.json (the edit), voice/voice-timing.json (narration), voice/captions.ass (captions) and the final video.
+Reads shots.json (the edit; explainer projects: explainer/shots.json), voice/voice-timing.json (narration), voice/captions.ass (captions) and the final video.
 Prints one PASS / FAIL / INFO line per parameter, with the reference target and range, and writes critic/audit.md.
 A FAIL here is a measured gap, not taste: give the critic this file with the render (rubric items 8 and 9).
 Needs: ffmpeg, python packages numpy + opencv-python.
@@ -76,7 +76,35 @@ def check(name, val, key=None, rng=None, unit='', info=False, fmt='{:.2f}'):
 
 
 # ---------------------------------------------------------------- edit (shots.json)
-shots = json.load(open(os.path.join(HERE, 'shots.json')))
+def explainer_shots(path):
+    """explainer/shots.json (compose.py) -> the same [{f_in, f_out, transition_in, size, set, mood}] list.
+    "at" is seconds or "line:wordStem"; crossfade/fade/dip count as dissolves, push_up/push_down as pushes."""
+    spec = json.load(open(path, encoding='utf-8-sig'))
+    words, vend = [], None
+    tp = os.path.join(HERE, 'voice', 'voice-timing.json')
+    if os.path.exists(tp):
+        t = json.load(open(tp, encoding='utf-8-sig'))
+        words = [dict(w, line=l['line']) for l in t['lines'] for w in l['words']]; vend = t.get('duration')
+    def when(x):
+        if isinstance(x, (int, float)): return float(x)
+        line, stem = str(x).split(':', 1)
+        for w in words:
+            bare = ''.join(c for c in w['w'] if c.isalnum() or c == "'").lower()
+            if w['line'] == int(line) and bare.startswith(stem.lower()): return float(w['start'])
+        sys.exit(f'audit.py: "{x}" not found in voice/voice-timing.json')
+    raw = spec['shots']; t0 = [when(s.get('at', 0)) for s in raw]
+    dur = float(spec.get('duration') or ((vend + 0.6) if vend else t0[-1] + 3.0))
+    kind = {'crossfade': 'dissolve', 'fade': 'dissolve', 'dip': 'dissolve', 'push_up': 'push', 'push_down': 'push', 'cut': 'cut'}
+    out = []
+    for i, s in enumerate(raw):
+        f_in = int(round(t0[i] * FPS)); f_out = int(round((t0[i + 1] if i + 1 < len(raw) else dur) * FPS))
+        out.append({'id': s.get('id', f's{i + 1:02d}'), 'f_in': f_in, 'f_out': f_out,
+                    'transition_in': kind.get(s.get('transition_in', 'cut'), s.get('transition_in', 'cut')),
+                    'size': s.get('size'), 'set': s.get('loc', s.get('set', 'main')), 'mood': s.get('mood', 'interior')})
+    return out
+
+EXPLAINER = not os.path.exists(os.path.join(HERE, 'shots.json')) and os.path.exists(os.path.join(HERE, 'explainer', 'shots.json'))
+shots = explainer_shots(os.path.join(HERE, 'explainer', 'shots.json')) if EXPLAINER else json.load(open(os.path.join(HERE, 'shots.json')))
 N = max(s['f_out'] for s in shots)
 dur = N / FPS
 picture = [s for s in shots[1:] if s.get('transition_in', 'cut') != 'travel']          # travel = same camera move, no picture change
@@ -89,11 +117,14 @@ kinds = [s.get('transition_in', 'cut') for s in picture]
 if kinds:
     check('Dissolve share of transitions', 100 * sum(k == 'dissolve' for k in kinds) / len(kinds), 'dissolve_share', unit='%', fmt='{:.0f}')
 check('Whip transitions', sum(k == 'whip' for k in kinds), 'whips', fmt='{:.0f}')
-cross = os.path.isdir(os.path.join(HERE, 'render', 'pre_dissolve'))     # dissolve.py ran on the last render
-rendered = os.path.isdir(os.path.join(HERE, 'render'))
-rows.append(('INFO' if not rendered else 'PASS' if cross or 'dissolve' not in kinds else 'FAIL', 'Dissolves rendered as crossfades',
-             'yes' if cross else 'no (dip to ink)' if rendered else 'no render/ folder',
-             '8-frame crossfade, no dip (DISSOLVE=cross bash go.sh)'))
+if EXPLAINER:     # compose.py draws every transition itself (crossfade 3f, fade 8f, push 4f, dip 6f)
+    rows.append(('INFO', 'Transitions drawn by compose.py', ', '.join(sorted(set(kinds))) or 'none', 'crossfades and pushes, see the style file'))
+else:
+    cross = os.path.isdir(os.path.join(HERE, 'render', 'pre_dissolve'))     # dissolve.py ran on the last render
+    rendered = os.path.isdir(os.path.join(HERE, 'render'))
+    rows.append(('INFO' if not rendered else 'PASS' if cross or 'dissolve' not in kinds else 'FAIL', 'Dissolves rendered as crossfades',
+                 'yes' if cross else 'no (dip to ink)' if rendered else 'no render/ folder',
+                 '8-frame crossfade, no dip (DISSOLVE=cross bash go.sh)'))
 
 # shot size per frame: shot size, overridden by camera keys that carry "size" (held until the next key)
 size = [None] * N
@@ -118,6 +149,8 @@ if fine:   # keys use the 7-step reference scale: count on it before mapping to 
 else:
     check('Shot-size changes per second (engine sizes)', changes / dur, 'size_changes_ps_engine')
 for z, (t, lo, hi) in SIZE_SHARE.items():
+    if 'size_share' in SKIP or all(x is None for x in size):   # not measured for this style, or no sizes in the shot list
+        rows.append(('INFO', f'Time in {z}', f'{100 * sum(1 for x in size if x == z) / N:.1f}%', 'not measured for this style')); continue
     check(f'Time in {z}', 100 * sum(1 for x in size if x == z) / N, rng=(t, lo, hi), unit='%', fmt='{:.1f}')
 loc = [None] * N     # location per frame: the shot's set, or a camera key's "loc" when the camera travels to another place
 for s in shots:

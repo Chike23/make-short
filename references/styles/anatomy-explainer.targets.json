@@ -14,5 +14,5 @@
   "words_ps":      [3.34, 3.23, 3.78]
  },
  "band": {"interior": [41, 84, 4, 13], "night": [41, 84, 4, 13], "day": [41, 84, 4, 13], "dusk": [41, 84, 4, 13]},
- "skip": ["caption_geometry", "caption_cards", "size_changes_ps", "size_changes_ps_engine", "locations_per_min", "whips"]
+ "skip": ["caption_geometry", "caption_cards", "size_changes_ps", "size_changes_ps_engine", "locations_per_min", "whips", "size_share"]
 }
