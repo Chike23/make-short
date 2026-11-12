@@ -54,7 +54,7 @@ BAND = {  # signalstats on 1080x1920 RGB frames: YAVG p10..p90, SATAVG p10..p90 
 
 # per-style targets: critic/targets.json overrides the numbers above for a style measured from other references
 # (written from references/styles/<style>.md). {"ref": {key: [target, low, high]}, "size_share": {...}, "band": {mood: [ylo, yhi, slo, shi]},
-#  "skip": ["caption_geometry", "caption_cards"]}. Missing file = the bean-world reference above.
+#  "skip": ["caption_geometry", "caption_cards", <any REF key>]}: skipped checks print as INFO. Missing file = the bean-world reference above.
 SKIP = set()
 _TGT = os.path.join(HERE, 'critic', 'targets.json')
 if os.path.exists(_TGT):
@@ -66,6 +66,8 @@ if os.path.exists(_TGT):
 
 rows = []
 def check(name, val, key=None, rng=None, unit='', info=False, fmt='{:.2f}'):
+    if key and key in SKIP:                               # not measured for this style (critic/targets.json "skip")
+        rows.append(('INFO', name, fmt.format(val) + unit, 'not measured for this style')); return
     t, lo, hi = REF[key] if key else rng
     tol = max(0.03 * abs(t), 0.1 * (hi - lo))        # sampling noise: frames are subsampled and resized for speed
     ok = lo - tol <= val <= hi + tol

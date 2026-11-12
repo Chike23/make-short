@@ -1,0 +1,297 @@
+{
+ "edit": {
+  "summary": {
+   "r1": {
+    "secs": 97.3,
+    "transitions": 27,
+    "shots": 28,
+    "mean_shot": 3.48,
+    "median_shot": 2.63,
+    "longest": 13.3,
+    "per_min": 16.6
+   },
+   "r2": {
+    "secs": 84.5,
+    "transitions": 24,
+    "shots": 25,
+    "mean_shot": 3.38,
+    "median_shot": 2.9,
+    "longest": 9.3,
+    "per_min": 17.0
+   },
+   "r3": {
+    "secs": 89.8,
+    "transitions": 21,
+    "shots": 22,
+    "mean_shot": 4.08,
+    "median_shot": 3.52,
+    "longest": 11.3,
+    "per_min": 14.0
+   },
+   "r4": {
+    "secs": 86.7,
+    "transitions": 25,
+    "shots": 26,
+    "mean_shot": 3.33,
+    "median_shot": 2.83,
+    "longest": 10.1,
+    "per_min": 17.3
+   },
+   "r5": {
+    "secs": 108.0,
+    "transitions": 24,
+    "shots": 25,
+    "mean_shot": 4.32,
+    "median_shot": 4.0,
+    "longest": 11.9,
+    "per_min": 13.3
+   },
+   "r6": {
+    "secs": 73.9,
+    "transitions": 13,
+    "shots": 14,
+    "mean_shot": 5.28,
+    "median_shot": 3.55,
+    "longest": 21.2,
+    "per_min": 10.6
+   }
+  },
+  "types": {
+   "crossfade": 73,
+   "cut (1-2 frames)": 21,
+   "slow crossfade/fade": 13,
+   "dip/fade through dark": 6,
+   "vertical slide/push": 21
+  },
+  "shot_mean": 3.857857142857143,
+  "shot_median": 2.8833333333333333
+ },
+ "words": {
+  "r1": {
+   "words": 324,
+   "words_per_s": 3.33,
+   "median_gap_s": 0.233,
+   "cards": 148,
+   "words_per_card": 2.19,
+   "cards_per_s": 1.52
+  },
+  "r2": {
+   "words": 280,
+   "words_per_s": 3.31,
+   "median_gap_s": 0.233,
+   "cards": 81,
+   "words_per_card": 3.46,
+   "cards_per_s": 0.96
+  },
+  "r3": {
+   "words": 307,
+   "words_per_s": 3.42,
+   "median_gap_s": 0.233,
+   "cards": 96,
+   "words_per_card": 3.2,
+   "cards_per_s": 1.07
+  },
+  "r4": {
+   "words": 328,
+   "words_per_s": 3.78,
+   "median_gap_s": 0.2,
+   "cards": 91,
+   "words_per_card": 3.6,
+   "cards_per_s": 1.05
+  },
+  "r5": {
+   "words": 349,
+   "words_per_s": 3.23,
+   "median_gap_s": 0.267,
+   "cards": 118,
+   "words_per_card": 2.96,
+   "cards_per_s": 1.09
+  },
+  "r6": {
+   "words": 247,
+   "words_per_s": 3.34,
+   "median_gap_s": 0.267,
+   "cards": 67,
+   "words_per_card": 3.69,
+   "cards_per_s": 0.91
+  }
+ },
+ "camera": {
+  "r1": {
+   "windows": 102,
+   "zoom_in_pct": 19,
+   "zoom_out_pct": 15,
+   "pan_pct": 7,
+   "still_pct": 60,
+   "median_zoom_in_pct_per_s": 6.28
+  },
+  "r2": {
+   "windows": 82,
+   "zoom_in_pct": 44,
+   "zoom_out_pct": 6,
+   "pan_pct": 10,
+   "still_pct": 40,
+   "median_zoom_in_pct_per_s": 1.7
+  },
+  "r3": {
+   "windows": 96,
+   "zoom_in_pct": 12,
+   "zoom_out_pct": 14,
+   "pan_pct": 11,
+   "still_pct": 62,
+   "median_zoom_in_pct_per_s": 6.22
+  },
+  "r4": {
+   "windows": 84,
+   "zoom_in_pct": 30,
+   "zoom_out_pct": 18,
+   "pan_pct": 5,
+   "still_pct": 48,
+   "median_zoom_in_pct_per_s": 4.04
+  },
+  "r5": {
+   "windows": 118,
+   "zoom_in_pct": 29,
+   "zoom_out_pct": 10,
+   "pan_pct": 8,
+   "still_pct": 53,
+   "median_zoom_in_pct_per_s": 2.43
+  },
+  "r6": {
+   "windows": 101,
+   "zoom_in_pct": 11,
+   "zoom_out_pct": 16,
+   "pan_pct": 4,
+   "still_pct": 69,
+   "median_zoom_in_pct_per_s": 3.4
+  }
+ },
+ "colour": {
+  "luma": [
+   19.0,
+   16.7,
+   22.6
+  ],
+  "p5": [
+   3.9,
+   3.2,
+   5.6
+  ],
+  "p95": [
+   59.3,
+   54.1,
+   67.2
+  ],
+  "sat": [
+   45.7,
+   30.2,
+   53.7
+  ],
+  "a": [
+   3.4,
+   2.0,
+   5.5
+  ],
+  "b": [
+   7.0,
+   4.1,
+   9.8
+  ],
+  "hue": [
+   28.0,
+   25.7,
+   30.4
+  ],
+  "top": [
+   10.1,
+   8.7,
+   14.6
+  ],
+  "mid": [
+   31.5,
+   29.1,
+   37.6
+  ],
+  "bot": [
+   14.1,
+   10.7,
+   17.2
+  ],
+  "black": [
+   10.9,
+   1.0,
+   23.1
+  ]
+ },
+ "captions": {
+  "r1": {
+   "caption_frames_pct": 87.9,
+   "box_frames_pct": 22.7,
+   "boxes_per_min": 38.8
+  },
+  "r2": {
+   "caption_frames_pct": 92.2,
+   "box_frames_pct": 27.3,
+   "boxes_per_min": 34.8
+  },
+  "r3": {
+   "caption_frames_pct": 92.2,
+   "box_frames_pct": 30.4,
+   "boxes_per_min": 49.4
+  },
+  "r4": {
+   "caption_frames_pct": 92.7,
+   "box_frames_pct": 28.2,
+   "boxes_per_min": 35.3
+  },
+  "r5": {
+   "caption_frames_pct": 91.9,
+   "box_frames_pct": 19.1,
+   "boxes_per_min": 28.9
+  },
+  "r6": {
+   "caption_frames_pct": 93.3,
+   "box_frames_pct": 32.7,
+   "boxes_per_min": 39.8
+  }
+ },
+ "signalstats": {
+  "per_reel": {
+   "r1": {
+    "YAVG_med": 58.4,
+    "SATAVG_med": 6.3
+   },
+   "r2": {
+    "YAVG_med": 57.0,
+    "SATAVG_med": 9.4
+   },
+   "r3": {
+    "YAVG_med": 49.5,
+    "SATAVG_med": 6.6
+   },
+   "r4": {
+    "YAVG_med": 56.7,
+    "SATAVG_med": 7.4
+   },
+   "r5": {
+    "YAVG_med": 67.9,
+    "SATAVG_med": 10.8
+   },
+   "r6": {
+    "YAVG_med": 51.5,
+    "SATAVG_med": 4.1
+   }
+  },
+  "YAVG": [
+   41.1,
+   57.0,
+   83.6
+  ],
+  "SATAVG": [
+   3.7,
+   7.1,
+   13.4
+  ]
+ },
+ "_note": "Measured 12 Nov 2026 at 30 fps on 6 reels (r1 DfpH4-IhLLO, r2 DfnTGaAhtkZ, r3 DfnGtYQx1L1, r4 Dfm-go6hx-N, r5 DfmjmCfB9Vh, r6 DfkuUO-RC9p first version). See references/styles/anatomy-explainer.md section 8 for method and limits."
+}

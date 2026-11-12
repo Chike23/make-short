@@ -1,6 +1,6 @@
 # Style: anatomy explainer (health science in a warm 3D room, with X-ray reveals)
 
-**Status: in setup.** Captions and callouts are built and tested (`v3/voice/captions-explainer.mjs`). Everything below marked **~** is an estimate from the reference account's profile thumbnails, and gets replaced by the 30 fps measurement (section 8). The character kit, sets and X-ray look are not built yet (section 6).
+**Status: in setup (measured).** All 6 reference reels were measured at 30 fps on 12 Nov 2026 (section 8). Captions and callouts are built, tuned to the measurement and checked side by side (`v3/voice/captions-explainer.mjs`). Still to build: the shot builder, the lead character and the pictures (section 6).
 
 **Reference:** the 6 most recent Reels on the Instagram account `muscle40plus_` as of 12 Nov 2026 (reel IDs DfpH4-IhLLO, DfnTGaAhtkZ, DfnGtYQx1L1, Dfm-go6hx-N, DfmjmCfB9Vh, DfkuUO-RC9p). Use only these 6 unless the user says otherwise. Older posts on that page (food plates, petri dishes) are a different look.
 **Copy the style, never the content:** original characters and rooms, our own scripts, no names, logos or watermarks from the reference.
@@ -23,23 +23,32 @@
 - **Infographics:** thin, clean UI. A big number with a small label, an "age" counter with a rule, magnifier circles with leader lines, CAPS tags ("FOREARM FLEXORS"), and a small grey footnote saying what a colour means ("Body water shown in magenta").
 - **Motion:** body movement (lifts, push-ups), slow camera drift, motion echoes on fast moves, dust specks in the light.
 
-## 2. How it was probably made (best guess, not confirmed)
-Confidence is medium: this is from stills only, because Instagram needs a sign-in to play the reels.
-1. **Script:** an AI-written science script with a follow line at the end; AI voice (ElevenLabs-type).
-2. **Pictures:** an AI image model with a fixed style prompt and a character reference sheet, one still per beat. Each X-ray shot is an edit of the same still ("same frame, X-ray view").
-3. **Motion:** an image-to-video model (Kling, Veo, Seedance or Hailuo class) animating each still into a 5-10 s clip; start/end frames for the normal-to-X-ray reveals.
-4. **Finish:** an editor (CapCut, After Effects or Premiere) for cuts, word-highlight captions, the selection box, the number callouts and the magnifier circles, plus music and sound effects.
+## 2. How it is made (measured; best explanation)
+**Illustrated stills animated in an editor**, with a few short image-to-video moves. Confidence: medium-high for the editor part; whether the few body moves are AI video or puppet animation is not certain.
+1. **Script:** a sourced science script, about 90 s, read at 3.3 words a second, ending on a phone-UI call to action. Reel r6 was posted as the same video twice with two different hooks (frames 304-2215 repeat as 2520-4431): they A/B test openings.
+2. **Pictures:** consistent painterly "illustrated 3D" stills: the same lead character per video, warm dark rooms, props floating on a dark stage. X-ray views are matching stills or layers (organs, bones, muscles) laid over the body.
+3. **Motion is mostly the edit, not the scene:** within shots the camera is locked off about 56% of the time; slow push-ins (about 24%) and pull-outs (about 15%) run at 2-6% zoom a second, with pans about 8%. Characters hold a pose while layers fade in (X-ray organs, sweat drops, a towel, labels). Fast motion is on only about 3% of frames.
+4. **Real material composited in, with credits:** for example a Wikimedia ultrasound image captioned "carotid ultrasound: Mme Mim, Wikimedia", or "Tomoto et al., JCBFM" next to a study chart.
+5. **Editor presets for transitions:** 3-frame crossfades, vertical slides with motion blur, dips through dark. Plus word-by-word captions with a key-word selection box, number callouts, magnifier circles and a phone mock-up for the call to action.
 
-**Why:** every reel has new, fully dressed rooms and props; the X-ray versions keep the room and pose pixel-for-pixel; the deadlift has the ghosting that fast motion produces in AI video; the overlays are crisp vector graphics added afterwards. **Second possibility:** real 3D (Blender or Cinema 4D) with a rigged anatomy model, with the overlays done in After Effects.
+**Evidence:** at 30 fps, faces and printed text (plate weights, "IQ TEST", calendar cards) stay stable with no AI-video warping during camera moves; layers appear and fade independently of the body; real images carry credits; transitions are the same few preset shapes in every reel.
 
-**Confirming it (do this first when the files arrive):** look at fast movement frame by frame at 30 fps (`pipeline.py strip`). Hands, fingers, plates or furniture that subtly change shape, or textures that slide over a surface, mean AI video. Rigid geometry, a perfectly repeated character model and clean perspective mean 3D. Write the answer into section 2 and pick the route (section 5) from it.
-
-## 3. Captions (built: `captionStyle: "explainer"`)
-- A phrase card of 2-4 words (at most 2 lines), centred near the top: **~ line centre 340 px of 1920**, Inter **~64**.
-- Words appear as they are spoken. The word being spoken is **white Bold**; the card's earlier words are **grey Regular**. In a pause, the whole card is grey.
-- **Key words** (`keyWords` in `voice/cues.json`, word stems) stay white Bold in a **blue text-selection box with two round handles** (top-left, bottom-right). Use about one per sentence, on the term the video teaches ("resistance", "muscle").
-- No outline, a soft shadow, no pop-in.
-- Not measured yet: exact y, size, grey value, card length, words per card, and whether upcoming words show early.
+## 3. Captions (built and tuned: `captionStyle: "explainer"`)
+Measured at 720x1280, then converted to 1080x1920:
+| | Reference | Ours |
+|---|---|---|
+| Position | first baseline y 256 of 1280 (20%); second line 55 px lower | baseline y 384 of 1920; line pitch 82 px |
+| Size | cap height 35 px at 720 (x-height 25) | Inter 87, letters at 95% width, cap height 52 px |
+| Font | geometric sans (Figtree / Plus Jakarta Sans-like) | Inter Regular + Bold (shipped, OFL) |
+| Spoken word | white, bold | same |
+| Earlier words in the card | warm grey RGB about 112,108,105, regular weight | #74706C regular |
+| Key word | white bold in a blue (#3D7BFF-ish) selection box, dark fill, round handles top-left and bottom-right | same |
+| Entry | each word blurs in for 1 frame; the line re-centres as words arrive | same |
+| Between cards | about 2 empty frames | `cardGap: 2` |
+| Words per card | about 3.5 (3.0-3.7), up to 2 lines | `maxWords: 4` |
+| Cards per second | about 1.0 (0.9-1.1) | follows the narration |
+| Caption on screen | about 92% of frames | same |
+| Key-word box on screen | about 27% of frames (19-33%), about 38 boxes a minute: one key word in most phrases | pick 1 key word per phrase |
 
 ## 4. Callouts (built: `overlays` in `voice/cues.json`)
 ```json
@@ -53,40 +62,60 @@ Confidence is medium: this is from stills only, because Instagram needs a sign-i
  ]}
 ```
 `at` / `until`: seconds, or `"line:wordStem"` (that word's start). `until` defaults to 3 s later. Positions are px at 1080x1920.
-**Not built yet:** the magnifier circle (a zoomed crop of the frame inside a ring, with leader lines). Make it in the render (Blender: a second camera, rendered into a circle) or add it as an ffmpeg overlay step.
+Also seen: small grey **source credits** (author, journal, year) next to the image or chart they belong to, and a **phone in a hand** showing an Instagram DM or share screen as the call to action in the last 5-8 s. **Not built yet:** the magnifier circle (a zoomed crop inside a ring, with leader lines) and source credits as a callout type.
 
-## 5. Two ways to build the pictures (the user picks, once)
-| | **A. AI clips** (closest to the reference) | **B. Blender** (the engine this skill already has) |
+## 4b. Edit, camera, colour, sound (measured)
+| | Measured (median, range across the 6) | Bean-world reference, for contrast |
 |---|---|---|
-| How | Claude writes one still prompt per beat (style block plus character sheet), the X-ray edit, and the motion prompt. An image model makes the stills, an image-to-video model animates them, and our `finish.mjs`, audit and critic do the rest | Claude builds the character, rooms, X-ray materials and motion in Blender code, like the bean world |
-| Cost | Paid per image and per clip, using the user's own API key, set in their own environment (never in chat). Tell them the clip count before generating | Free |
-| One-time setup | An API account and key, plus a character reference sheet (generated once, then reused) | The biggest build: a realistic-proportion character with a rig (MPFB / MakeHuman, CC0 output), anatomy meshes (Z-Anatomy, CC BY-SA 4.0: credit it), an X-ray shader (fresnel emission + see-through body), 2-3 room sets |
-| Per video | Fast: new rooms and props cost nothing extra | Slow: every new room or prop is new code |
-| Control | Less: clips can morph; regenerate bad ones | Full: frame-exact, repeatable |
+| Length | 84-108 s (r6 first version 74 s) | 56-65 s |
+| Average shot | **3.9 s** (per reel 3.3-5.3); median 2.9 s; middle 80% between 0.9 and 7.8 s | 4.3 s |
+| Transitions per minute | about 16 (10.6-17.3) | 13 |
+| Transition types | 3-frame crossfade 54%; vertical slide/push with motion blur 16%; 1-2 frame cut 16%; slow 6-10 frame crossfade or fade 10%; dip through dark 4% | 95% 8-frame crossfades |
+| Camera inside a shot | still 56% (40-69%); slow push-in 24%; pull-out 15%; pan 8%; zoom 2-6% a second; fast motion about 3% of frames | moving on 79-96% of frames |
+| Shot content | character in a room or gym, normal or X-ray (about 45%); props and infographics on a dark stage (about 35%); medical close-ups such as scans, fibres and bone (about 15%); phone-UI call to action (about 5%) | characters in a painted world |
+| Brightness | very dark: mean luma 19% of full scale (17-23%); top band (captions) 10%, middle 31%, bottom 14%; signalstats YAVG p10/p50/p90 41 / 57 / 84 | luma 42% |
+| Colour | warm orange-brown: hue about 28 degrees, Lab a +3.4, b +7.0; low saturation, signalstats SATAVG p10/p50/p90 4 / 7 / 13 | SATAVG 19-35 interior |
+| Narration | **3.3 words a second** (3.2-3.8); about 0.23 s between word onsets | 3.75 words a second |
+| Not measured | music and sound effects, voice tone, exact shot sizes per frame | |
+
+## 5. How we build it (the user picks where the stills come from, once)
+The measurement shows the motion is mostly the edit: still pictures, slow zooms, layers fading in, preset transitions. So every option shares one **shot builder** that Claude writes in code (ffmpeg; section 6). The choice is only where the pictures come from:
+
+| | **A. Image model stills** (closest to the reference) | **B. Blender stills** (free, this skill's engine) |
+|---|---|---|
+| How | Claude writes one prompt per shot from a fixed style block and the character sheet, plus the X-ray or overlay variant of the same frame. The user generates them in an image tool, or Claude does through an API key in the user's own environment | Claude builds the character, rooms and props in Blender code and renders single frames (plus X-ray passes) instead of full animation |
+| Cost | The image tool's plan or per-image API price; tell the user the image count first | Free |
+| One-time setup | A character reference sheet, made once and reused | A realistic-proportion character (MPFB / MakeHuman, CC0 output), anatomy meshes (Z-Anatomy, CC BY-SA 4.0: credit it), an X-ray material, 3 rooms and a dark stage |
+| Per video | Fast: about 25 shots, each one or two images | Slower: new props are new code, but renders are single frames, so quick |
+| Body moves (about 3% of frames) | Optional: an image-to-video tool on the 2-3 shots that need it (paid) | Blender animates those shots for real |
 
 ## 6. What has to be built
-- [x] Captions and callouts (`captions-explainer.mjs`), tested with libass and the shipped Inter fonts
-- [x] 30 fps measurement (`measure/pipeline.py prep`)
-- [ ] Measure the 6 reels (section 8), then fill in the **~** numbers and `critic/targets.json`
-- [ ] Confirm how they were made (section 2), then pick route A or B
-- [ ] Lead character: our own design (for example a woman in her 50s, or a man with a different look and colour), with a reference sheet: front, side, three-quarter, X-ray versions
-- [ ] Rooms: home gym, living room (lamp + sunset window), kitchen
-- [ ] The X-ray look: bones white-gold, nerves orange-gold, fluids magenta
-- [ ] Magnifier circle
-- [ ] One 15 s test Short, then the critic loop
+- [x] Captions and callouts, tuned to the measurement and checked side by side (`captions-explainer.mjs`)
+- [x] 30 fps measurement of the 6 reels (`measure/pipeline.py prep`; results in sections 2-4b)
+- [x] Confirmed how they are made (section 2), so **route A changes**: stills animated in the edit. Image-to-video only for the few body moves
+- [ ] Pick where the stills come from: an image model (paid or free tier, used by the user or through an API key) or Blender renders
+- [ ] Shot builder: one still (plus optional X-ray / overlay layers) per shot; slow push-in or pull-out at 2-6% a second; layers that fade in on a word; 3-frame crossfades, vertical slides and dips between shots; written as ffmpeg filter graphs from a `shots.json`
+- [ ] Lead character: our own design, with a reference sheet: front, side, three-quarter and X-ray versions
+- [ ] Rooms: home gym, living room (lamp + window), kitchen; plus a dark "stage" for props and infographics
+- [ ] Magnifier circle and source-credit callouts; phone-UI call-to-action template
+- [ ] `critic/targets.json` for this style: `references/styles/anatomy-explainer.targets.json` (copy it into each project)
+- [ ] One 30 s test Short, then the critic loop
 
 ## 7. Story formula (health explainer)
 - **Sources first:** every health claim needs a study or a guideline; list them in `story.md` and drop anything unsupported. Explain, never prescribe: no doses, no diagnoses.
-- **Hook in line 1:** a surprising fact about the body after 40, said to "you", with the lead in frame.
+- **Hook in line 1:** a surprising fact about the body after 40, said to "you", with the lead in frame. The reference tests two hooks for the same body (r6); you can do the same by rendering two openings.
 - **Inside the body:** the X-ray reveal shows the mechanism; one number callout per claim.
 - **What to do:** one simple action (for example "resistance training"), shown being done.
 - **Payoff:** what changes, back to the number or the counter.
 - **End:** a follow line for the user's own account (their name, never the reference's).
-- **Length:** ~ 30-45 s until measured.
+- **Length:** the reference runs 84-108 s at 3.3 words a second (about 280-350 words). Start with 30-45 s Shorts (100-150 words) and build up.
 
-## 8. Measuring the 6 reels (at 30 fps)
-1. The user downloads the 6 reels (they need to be signed in to Instagram) and attaches them, or saves them to a folder Claude can reach.
-2. One folder per reel: `refs/anatomy-explainer/r1/ ... r6/`, with the download inside.
-3. `python3 -I <SKILL>/measure/pipeline.py prep <dir>` converts each to 720x1280 at exactly 30 fps and extracts every frame. Read `source_meta.json`: it says if the source was 25 or 60 fps.
-4. Then the rest of `measure/README.md`: one review agent per reel, then `bands.py` and `params.py`.
-5. Write the numbers in here (replacing every **~**), then write `critic/targets.json` for projects in this style: shot length, transitions, colour bands per mood, caption cards per second. Add `"skip": ["caption_geometry", "caption_cards"]` until audit.py has a top-caption check.
+## 8. Measurement record (12 Nov 2026)
+- **Files:** the 6 reels, saved from the user's signed-in browser: 720x1280 at 30 fps, 84-154 s. r6 measured on its first version only (frames 0-2215).
+- **Method:** `pipeline.py prep`, `small`, `measure`, `capband`, `sheets`, plus four quick passes:
+  - transitions: candidate clusters, an automatic classifier, then every unclear case checked by eye on frame strips;
+  - camera: ORB feature matching every 0.5 s inside shots;
+  - words: onsets of new white caption words;
+  - key-word boxes: blue pixels in the caption band, every 2nd frame.
+- **Not done (the full measure/ review):** an agent coding shot size and location for every frame, and clean caption text. The automatic caption OCR did not suit word-by-word captions, so it was stopped. Shot counts are about ±15%: the classifier finds most picture changes, a few in-shot overlay changes count as transitions, and a few slow ones may be missed (r6's longest "shot" of 21 s probably hides one).
+- **Re-measuring:** download into `refs/anatomy-explainer/rN/`, then `python3 -I SKILL/measure/pipeline.py prep refs/anatomy-explainer/rN` and the steps in `measure/README.md`. Keep the videos and frames out of the repo.

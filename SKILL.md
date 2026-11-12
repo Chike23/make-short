@@ -44,7 +44,7 @@ Then confirm the idea in one line.
 ### 3. Style
 Ask "Which look?":
 - **Bean world 3D**: cartoon bean characters in a painted 3D world (Blender). Ready. Best for history and paradox stories.
-- **Anatomy explainer**: warm 3D rooms, stylised adults, X-ray reveals, number callouts, top captions with a key-word box. Read `references/styles/anatomy-explainer.md` first. While its status is **in setup**, say in one line what is still missing, then ask: **Set the style up now** (follow `references/new-style.md` for that style file; it needs the reference reels) / **Use the bean world this time**.
+- **Anatomy explainer**: warm 3D rooms, stylised adults, X-ray reveals, number callouts, top captions with a key-word box (measured from 6 reference reels). Read `references/styles/anatomy-explainer.md` first; copy `references/styles/anatomy-explainer.targets.json` to `P/critic/targets.json`. While its status is **in setup**, say in one line what is still missing, then ask: **Set the style up now** (follow `references/new-style.md` for that style file; it needs the reference reels) / **Use the bean world this time**.
 - **2D style**: then a second question with the 4 best fits from `references/style-catalogue.md` (flat, blueprint, pixel, woodcut, watercolour, glass, ASCII; voxel, lidar and teardown are 3D).
 - **New style from my reference videos**: follow `references/new-style.md`, then come back here.
 
@@ -57,7 +57,7 @@ Write `P/brief.json` and `P/progress.md` (templates at the end).
 ### 4. Length
 Ask "How long?":
 - **Bean world:** 60 s (Recommended; the reference runs 56-65 s) / 30 s / 15 s quick test.
-- **Anatomy explainer:** the measured length once measured; until then 30 s / 45 s / 15 s quick test.
+- **Anatomy explainer:** 45 s (Recommended to start) / 90 s (the reference runs 84-108 s) / 30 s / 15 s quick test.
 - **2D:** 15 s / 20 s / 25 s (25 s is the most).
 
 ### 5. Story

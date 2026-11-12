@@ -1,11 +1,13 @@
 // captions-explainer.mjs: captions + callouts for the "anatomy explainer" look (references/styles/anatomy-explainer.md)
 // Used by finish.mjs when voice/cues.json has "captionStyle": "explainer". Writes ASS for libass, 1080x1920.
 //
-// Captions (observed on the reference; numbers marked ~ are first estimates until the 30 fps measurement replaces them):
-//  - a short phrase card (2-4 words, up to 2 lines) near the TOP of the frame, centred, sentence case, Inter
-//  - words appear as they are spoken; the word being spoken is white Bold, earlier words in the card are grey Regular
+// Captions (measured on the 6 reference reels at 30 fps):
+//  - a short phrase card (2-4 words, up to 2 lines) near the TOP of the frame, centred, sentence case; Inter stands in for
+//    the reference's geometric sans (cap height 52 px at 1080, first baseline at y 384, second line 82 px lower)
+//  - words appear as they are spoken and the line re-centres as each one arrives; a word enters blurred and is sharp one frame later
+//  - the word being spoken is white Bold; earlier words in the card are warm grey Regular; 2 empty frames between cards
 //  - "key words" (cues.json keyWords: word stems) stay white Bold inside a blue text-selection box with two round handles
-//  - no outline; a soft dark shadow keeps it readable on light backgrounds; no pop or scale animation
+//  - no outline; a soft dark shadow keeps it readable on lighter backgrounds; no pop or scale animation
 // Callouts (cues.json "overlays"): stat (big number + small label), note (small grey footnote), tag (CAPS label + leader line),
 //  counter (small label over a big number, for example "age" / "30", with a thin rule under it)
 import fs from 'node:fs'; import path from 'node:path';
@@ -14,12 +16,15 @@ const here = path.dirname(new URL(import.meta.url).pathname.replace(/^\/(\w:)/, 
 export const FONTS_DIR = path.join(here, 'fonts');
 const M = JSON.parse(fs.readFileSync(path.join(FONTS_DIR, 'inter-metrics.json'), 'utf8'));
 
-const DEF = {
-  size: 64,              // ~ ASS font size (Inter: cap height = 0.6 x size in px)
-  lineCentreY: 340,      // ~ centre of the first caption line, px from the top of 1920
-  lineGap: 1.18,         // line pitch in font sizes
-  maxWords: 4, maxLineWidth: 860, maxCardSecs: 2.4, pauseBreak: 0.35,
-  white: 'FFFFFF', grey: '9A9A9A', blue: '3D7BFF', boxFillAlpha: 0xC8,   // RGB hex; alpha 00 = opaque, FF = invisible
+const DEF = {            // measured on the 6 reference reels at 30 fps (references/styles/anatomy-explainer.md section 3)
+  size: 87,              // Inter at 87 = cap height 52 px at 1080 wide (reference: 35 px at 720)
+  scaleX: 95,            // Inter is about 5% wider than the reference's geometric sans
+  lineCentreY: 352,      // first baseline at y 384 of 1920 (reference: 256 of 1280); checked side by side
+  lineGap: 0.95,         // second line 82 px lower (reference: 55 px at 720)
+  maxWords: 4, maxLineWidth: 640, maxCardSecs: 2.4, pauseBreak: 0.35,
+  cardGap: 2,            // frames of empty caption between cards
+  blurIn: true,          // each word enters blurred and sharpens in one frame
+  white: 'FFFFFF', grey: '74706C', blue: '3D7BFF', boxFillAlpha: 0xC8,   // RGB hex; alpha 00 = opaque, FF = invisible
   shadow: true,
 };
 
@@ -52,10 +57,11 @@ function cards(words, o) {
 
 // split a card into at most 2 centred lines; each word gets a slot (the mean of its Regular and Bold widths)
 function layout(card, o, isKey) {
-  const space = textWidth(' ', o.size, 'regular');
+  const sx = (o.scaleX ?? 100) / 100;
+  const space = textWidth(' ', o.size, 'regular') * sx;
   // key words get room for their selection box (box padding plus a small gap) so it never touches the next word
-  const slot = w => isKey(w) ? textWidth(clean(w.w), o.size, 'bold') + o.size * 0.5
-    : (textWidth(clean(w.w), o.size, 'regular') + textWidth(clean(w.w), o.size, 'bold')) / 2;
+  const slot = w => isKey(w) ? textWidth(clean(w.w), o.size, 'bold') * sx + o.size * 0.5
+    : (textWidth(clean(w.w), o.size, 'regular') + textWidth(clean(w.w), o.size, 'bold')) / 2 * sx;
   const lines = [[]]; let width = 0;
   for (const w of card) {
     const add = slot(w) + (lines[lines.length - 1].length ? space : 0);
@@ -122,25 +128,28 @@ export function buildExplainerAss(words, T, CF = {}) {
   const ev = [];
   const all = cards(words, o);
   all.forEach((card, ci) => {
-    const placed = layout(card, o, isKey);
-    const cardEnd = all[ci + 1]?.[0].start ?? Math.min(card[card.length - 1].end + 0.6, T.duration + 0.4);
+    const next = all[ci + 1]?.[0].start;
+    const cardEnd = next != null ? Math.max(card[card.length - 1].end, next - o.cardGap / 30) : Math.min(card[card.length - 1].end + 0.6, T.duration + 0.4);
     // time cuts: every word start and end inside the card
-    const cuts = [...new Set(card.flatMap(w => [w.start, Math.min(w.end, cardEnd)]).concat([cardEnd]))].sort((a, b) => a - b);
+    const cuts = [...new Set(card.flatMap(w => [w.start, Math.min(w.end, cardEnd)]).concat([cardEnd]))].filter(t => t <= cardEnd).sort((a, b) => a - b);
     for (let k = 0; k + 1 < cuts.length; k++) {
       const a = cuts[k], b = cuts[k + 1]; if (b - a < 0.005) continue;
-      for (const w of placed) {
-        if (w.start > a + 1e-6) continue;                            // not spoken yet
+      const visible = card.filter(w => w.start <= a + 1e-6);         // the line re-centres as words arrive
+      if (!visible.length) continue;
+      for (const w of layout(visible, o, isKey)) {
         const active = a >= w.start - 1e-6 && a < w.end - 1e-6, key = isKey(w), lit = active || key;
-        const style = `\\an5\\pos(${w.cx.toFixed(1)},${w.cy.toFixed(1)})\\fnInter\\fs${o.size}\\b${lit ? 1 : 0}\\c${bgr(lit ? o.white : o.grey)}`;
+        const entering = o.blurIn && Math.abs(a - w.start) < 1e-6;
+        const enter = entering ? '\\blur7\\alpha&H70&\\t(0,33,\\blur0\\alpha&H00&)' : '';
+        const style = `\\an5\\pos(${w.cx.toFixed(1)},${w.cy.toFixed(1)})\\fnInter\\fs${o.size}\\fscx${o.scaleX ?? 100}\\b${lit ? 1 : 0}\\c${bgr(lit ? o.white : o.grey)}`;
         if (o.shadow) ev.push(`Dialogue: 0,${ts(a)},${ts(b)},X,,0,0,0,,{${style}\\c&H000000&\\alpha&H70&\\bord6\\3c&H000000&\\3a&H90&\\blur10}${clean(w.w)}`);
-        ev.push(`Dialogue: 2,${ts(a)},${ts(b)},X,,0,0,0,,{${style}}${clean(w.w)}`);
+        ev.push(`Dialogue: 2,${ts(a)},${ts(b)},X,,0,0,0,,{${style}${enter}}${clean(w.w)}`);
         if (key) {
-          const bw = textWidth(clean(w.w), o.size, 'bold') + o.size * 0.3, bh = o.size * 0.98;
+          const bw = textWidth(clean(w.w), o.size, 'bold') * (o.scaleX ?? 100) / 100 + o.size * 0.3, bh = o.size * 0.98;
           const bx = w.cx - bw / 2, by = w.cy - bh / 2 - o.size * 0.02;
           ev.push(`Dialogue: 1,${ts(a)},${ts(b)},X,,0,0,0,,{\\an7\\pos(0,0)\\p1\\bord0\\shad0\\c${bgr(o.blue)}\\alpha&H${hex2(o.boxFillAlpha)}&}${rect(bx, by, bw, bh)}{\\p0}`);
-          ev.push(`Dialogue: 3,${ts(a)},${ts(b)},X,,0,0,0,,{\\an7\\pos(0,0)\\p1\\bord2.5\\shad0\\1a&HFF&\\3c${bgr(o.blue)}}${rect(bx, by, bw, bh)}{\\p0}`);
-          const r = o.size * 0.085;
-          ev.push(`Dialogue: 3,${ts(a)},${ts(b)},X,,0,0,0,,{\\an7\\pos(0,0)\\p1\\bord2\\shad0\\c${bgr('FFFFFF')}\\3c${bgr(o.blue)}}${circle(bx, by, r)} ${circle(bx + bw, by + bh, r)}{\\p0}`);
+          ev.push(`Dialogue: 3,${ts(a)},${ts(b)},X,,0,0,0,,{\\an7\\pos(0,0)\\p1\\bord3\\shad0\\1a&HFF&\\3c${bgr(o.blue)}}${rect(bx, by, bw, bh)}{\\p0}`);
+          const r = o.size * 0.1;
+          ev.push(`Dialogue: 3,${ts(a)},${ts(b)},X,,0,0,0,,{\\an7\\pos(0,0)\\p1\\bord2\\shad0\\c${bgr(o.blue)}\\3c${bgr('FFFFFF')}}${circle(bx, by, r)} ${circle(bx + bw, by + bh, r)}{\\p0}`);
         }
       }
     }
