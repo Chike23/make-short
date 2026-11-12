@@ -71,7 +71,7 @@ Also seen: small grey **source credits** (author, journal, year) next to the ima
 | Average shot | **3.9 s** (per reel 3.3-5.3); median 2.9 s; middle 80% between 0.9 and 7.8 s | 4.3 s |
 | Transitions per minute | about 16 (10.6-17.3) | 13 |
 | Transition types | 3-frame crossfade 54%; vertical slide/push with motion blur 16%; 1-2 frame cut 16%; slow 6-10 frame crossfade or fade 10%; dip through dark 4% | 95% 8-frame crossfades |
-| Camera inside a shot | still 56% (40-69%); slow push-in 24%; pull-out 15%; pan 8%; zoom 2-6% a second; fast motion about 3% of frames | moving on 79-96% of frames |
+| Camera inside a shot | still 56% (40-69%); slow push-in 24%; pull-out 15%; pan 8%; zoom 2-6% a second; fast motion about 3% of frames. **Overridden by the user (12 Nov 2026): the camera moves on every frame, and the lead is livelier than the reference** (house rules in `references/route-explainer.md`) | moving on 79-96% of frames |
 | Shot content | character in a room or gym, normal or X-ray (about 45%); props and infographics on a dark stage (about 35%); medical close-ups such as scans, fibres and bone (about 15%); phone-UI call to action (about 5%) | characters in a painted world |
 | Brightness | very dark: mean luma 19% of full scale (17-23%); top band (captions) 10%, middle 31%, bottom 14%; signalstats YAVG p10/p50/p90 41 / 57 / 84 | luma 42% |
 | Colour | warm orange-brown: hue about 28 degrees, Lab a +3.4, b +7.0; low saturation, signalstats SATAVG p10/p50/p90 4 / 7 / 13 | SATAVG 19-35 interior |

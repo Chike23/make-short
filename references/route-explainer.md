@@ -2,7 +2,19 @@
 
 Followed from the guide in `SKILL.md` (step "Build") for the anatomy-explainer style, once `references/styles/anatomy-explainer.md` says **ready**. The guide has already settled the idea, length, story, script, voice, music, captions and ending in `P/brief.json`: do not ask again. The approvals (plan, stills, render) still stop and wait, through the guide's question format.
 
-**The choice made for this style (12 Nov 2026): Blender makes the pictures, and the lead is animated.** The first test with stills and 2D zooms felt lifeless. So the lead is now rigged on the free Quaternius animation library (`explainer/rig.py`). She plays its clips (talking gestures, idle, walk, sit) plus layered actions (arm curls), and she blinks and moves her mouth with the voice. Each shot is rendered as a short clip with its own camera move, plus an X-ray pass. `explainer/compose.py` joins the clips with the measured transitions and adds the layers. Props and infographic shots can still be stills with a slow zoom.
+**The choice made for this style (12 Nov 2026): Blender makes the pictures, and the lead is animated.** The first test with stills and 2D zooms felt lifeless. Each shot is rendered as a short clip with its own camera move, plus an X-ray pass. `explainer/compose.py` joins the clips with the measured transitions and adds the layers.
+
+## House rules (set by the user, 12 Nov 2026; they override the measured reference)
+- **Library first.** Never build a character, motion, prop, room or effect from scratch when a library has it. Scratch is the fallback, and only for what no library covers. The libraries:
+  - character, clothes, hair, facial expressions: **MPFB2** (MakeHuman for Blender, CC0 assets; `faceunits01` pack for expressions);
+  - motion: **Mixamo** (free with an Adobe account; exercises, reactions, gestures) and **Quaternius Universal Animation Library 1 and 2** (CC0);
+  - clips onto the lead: the **Retarget** add-on (Blender Extensions, Mixamo preset);
+  - camera: **Camera Shakify** (recorded handheld shake) on top of every camera move;
+  - rooms and props: **Poly Haven** (CC0) first;
+  - X-ray anatomy: **CC-BY models from Sketchfab** (credit only). List every CC-BY asset in `P/credits.md` and paste it into the video description.
+- **She doesn't talk.** No lip-sync and no breathing layer. She reacts and acts to fit the story: one reaction or action per narration beat (shocked at a bad number, nods at good news, starts the exercise when the voice names it, celebrates the result). Blinks and a facial expression per beat are fine.
+- **Lively.** No idle hold longer than about 1.5 s. Prefer big, readable mocap moves over small gestures.
+- **The camera moves on every frame.** Every shot has a move (push in, pull out, arc, pan, tilt or dolly), plus handheld shake from Camera Shakify. Never locked off. Punch in on the key word of a line.
 
 ## 0. Project
 - Copy `SKILL/v3` to `~/shorts/<slug>` (P), and `SKILL/references/styles/anatomy-explainer.targets.json` to `P/critic/targets.json`.
@@ -12,7 +24,8 @@ Followed from the guide in `SKILL.md` (step "Build") for the anatomy-explainer s
 Write `explainer/shots.json` (format: `v3/explainer/README.md`). Aim for the measured edit:
 - a new picture about every 3.9 s (most 1-8 s); several narration lines can share a shot;
 - transitions: mostly `crossfade`, then `push_up` / `push_down` and `cut`, some `fade`, the odd `dip`;
-- camera: about half the shots locked off; the rest push in (2-6% a second) or pull out a little;
+- camera: moving in every shot (house rule above); vary the move between neighbouring shots, and punch in on key words;
+- the lead: one action or reaction per narration beat (house rule above), named in the plan next to the line it answers;
 - shot content: about 45% the lead in a room (normal or X-ray), 35% props and infographics on the dark stage, 15% medical close-ups, the phone call to action at the end;
 - an X-ray reveal is a layer that fades in on the word that names it ("bones", "muscle");
 - a stat moment is a `dim` layer plus a `stat` or `counter` callout in `voice/cues.json`.
@@ -25,9 +38,19 @@ Also write `voice/cues.json`:
 Show the plan in plain words and ask "Looks right?".
 
 ## 2. Render the shots in Blender (clips; stills for props)
+Library setup, once per computer (all into `assets/libs`, then installed in Blender):
+- extensions: MPFB2, Camera Shakify, Retarget (`bpy.ops.extensions.package_install_files`);
+- MPFB packs: `makehuman_system_assets`, `shirts01`, `pants01`, `shoes01`, `faceunits01` (`bpy.ops.mpfb.load_pack`). Use the `files.makehumancommunity.org` mirror: `files2` crawls at about 15 KB/s.
+
+Building blocks:
+- `explainer/lead_mpfb.py`: the lead from MPFB (`build_lead()`), facial expressions per beat (`express()`), blinks.
+- `explainer/props_lib.py`: Poly Haven models (`get_polyhaven()`, `place()`, `furnish_living_room()`).
+- `explainer/camera_rig.py`: a moving camera per shot (`shot_cam()`: push, pull, orbit, crane, pan, punch-ins, Camera Shakify shake). Call `prep_for_background()` before saving render jobs.
+- Mixamo clips on the lead (MPFB's documented route): export her once with `bpy.ops.mpfb.reduced_doll()` plus an FBX export, then upload that FBX to Mixamo. Download each clip **without skin**, FBX, 30 fps, "In Place" where offered. Import it, then snap it onto her with `bpy.ops.mpfb.map_mixamo()` (MPFB's "snap to mixamo") and bake.
+
 - Follow `explainer/scene_anim14.py`: `build()`, then `save_jobs()`, then `launch()`. Background renders run at about 1.1 s a frame at 720x1280. Poll `renders/anim/render.log` until `ALL_DONE`, then stage the clips.
-- Pick a clip per shot to match what she says: `Idle_Talking_Loop` while she explains, `Idle_Loop` plus `curl()` for an exercise, `Walk_Loop` to enter.
-- For a motion the library lacks, film it on a phone, then convert it with Rokoko Vision (free, single camera). Or layer an action on top, as `curl()` does.
+- Pick a library clip for each beat: a reaction for a surprising fact, the real exercise clip when the voice names it, a celebration for the payoff. Search Mixamo first, then Quaternius.
+- For a motion no library has, film it on a phone, then convert it with Rokoko Vision (free, single camera). Hand-keyed motion is the last resort.
 
 ### Stills (props, stage shots)
 - Build or reuse the sets and the lead from the Blender kit for this style (see the style file, section 6). Every render: 1350x2400, EEVEE.
