@@ -36,6 +36,12 @@ The first full render passed every automatic check and still looked like a horro
 
 ---
 
+## 🗣️ Guided mode
+
+Type `/make-short` (or `/make-short <your idea>`) and it walks you through the whole Short, one question at a time: the idea, the look, the length, whether you need a story, whether you want a voice-over and who reads it, music, captions and the ending. Then it builds, shows you the plan and the stills, renders, has a critic score it, and helps you publish. You never need the terminal. Say `stop` at any point, and `/make-short resume` carries on where you left off.
+
+**Looks:** the Blender bean world (ready), the anatomy explainer (warm 3D rooms with X-ray reveals; in setup, see `references/styles/anatomy-explainer.md`), the 2D styles, or a new style measured from your own reference videos (`references/new-style.md`). Every reference is measured at 30 fps, whatever frame rate it was downloaded at.
+
 ## 🧭 How it works
 
 <p align="center"><img src="assets/pipeline.png" width="820" alt="Measure, voice, build, critic, post, with a loop from critic back to build"></p>
@@ -125,10 +131,11 @@ Real numbers from the live 15-second run:
 
 ```
 make-short/
-├── SKILL.md           the steps Claude follows
+├── SKILL.md           the guide: the questions Claude asks, step by step, and which route to follow
 ├── INSTALL.md         prerequisites + install
 ├── CHECKLIST.md       first-run checks
-├── references/        reference-style.md (the measured reference), story rules, character rules, lessons, contract + brief examples
+├── references/        route-blender.md (3D build steps), legacy-2d-route.md, new-style.md, styles/ (one file per look),
+│                      reference-style.md (the measured reference), story rules, character rules, lessons, contract + brief examples
 ├── measure/           frame-accurate reference measurement + review brief for one agent per video
 ├── v3/                the Blender engine (scenes, characters, shots, gate, render, voice, critic rubric, audit.py, dissolve.py)
 │   └── example-60s/   a complete 60 s example project (story, contract, shots, acting)

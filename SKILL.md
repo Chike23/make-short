@@ -1,87 +1,147 @@
 ---
 name: make-short
-description: Make an animated YouTube Short end to end (9:16, bean characters in a painted Blender world) from one idea, matched to a frame-accurate measurement of the reference channel (references/reference-style.md). Claude measures a reference clip, writes a paradox story, records or generates the voice, builds the shot list and acting, checks stills by numbers AND by eye, renders natively, mixes sound, then an independent critic scores it and one director fixes each flagged beat. Supports a target length (for example a 15 s quick run). Never uploads without the user's explicit go. Use for "/make-short <idea>", "make an animated short about ...", "turn this into a Short".
+description: Guided maker for animated YouTube Shorts and Instagram Reels (9:16). Typing /make-short starts a step-by-step guide that asks the user, one question at a time, for the idea, style, length, story, voice-over script, voice, music, captions and ending, then builds, checks, renders, critiques and finishes the video, and helps publish it. Styles - Blender bean world (3D), anatomy explainer (warm 3D rooms with X-ray reveals, in setup), 2D styles, or a new style measured at 30 fps from the user's reference videos. Never uploads without the user's explicit go. Use for "/make-short" (with or without an idea), "/make-short resume", "make an animated short about ...", "turn this into a Short / Reel".
 ---
 
-# make-short (v3: Blender engine)
+# make-short: the guide
 
-**SKILL** = this skill's folder ("Base directory for this skill"). **P** = the user's project folder, a copy of `SKILL\v3` (step 0). Paths below are relative to P unless they start with SKILL. Install problems: `SKILL\INSTALL.md`. What to test after install: `SKILL\CHECKLIST.md`. The older 2D Chrome route (no Blender) is `references/legacy-2d-route.md`.
+You take the user from an idea to a finished vertical video, **one question at a time**. The user is not a developer and does not use the terminal. You run every command. They answer questions, look at pictures and videos, and record their voice if they choose to.
+
+**SKILL** = this skill's folder ("Base directory for this skill"). **P** = the project folder (step 3). Detailed build steps live in the route files: `references/route-blender.md` (bean world, v3 Blender engine), `references/legacy-2d-route.md` (2D styles), `references/new-style.md` (building a new style). Styles: `references/styles/*.md`.
+
+## How to ask
+- Use **AskUserQuestion**: one question per call (two only where a step says so), with 2-4 options. Put the recommended option first and add "(Recommended)" to its label. The user can always type their own answer. Without that tool, ask in one plain line with numbered options.
+- Start each question with one line saying where you are, for example "Step 5 of 13: story".
+- **Skip** a question when the user's message or `P/brief.json` already answers it, and say the answer in one line ("Style: bean world, from your message").
+- After every answer, update `P/brief.json` and tick the step in `P/progress.md`. Before P exists, hold the answers and write them in step 3.
+- The user can say **"stop"** (progress is saved), **"back"** (ask the previous question again) or **"resume"**. `/make-short resume` continues from `progress.md`.
+- Between questions, write at most 5 short lines. Never show stack traces: fix the error, and say what happened in one line.
 
 ## Rules, always
-- Nothing is uploaded or posted unless the user types "go" (step 9). Never print or ask for API keys; they live in the user's environment only.
-- No false claims: never write "1 prompt", "one prompt", "one click", "fully automatic". True: the user approved the story, and Claude wrote the shots, acting and code.
-- Generic IP only: original characters and world.
-- **LOOK at every still and strip yourself** (read the PNG). Passing numbers is not passing (lesson 1).
-- **Never self-score.** Builders rate about 2 points too high; only the independent critic scores (step 6).
-- Read `references/reference-style.md` (the measured reference: edit, camera, shot sizes, colour per mood, captions, narration speed) before steps 2 and 4. Where an older lesson or rubric line disagrees with it, the measurement wins (lessons 51-62).
-- Read `references/lessons.md` (binding) before step 4 and before every fix round. Append new lessons after every round.
-- Quote ETAs from the clock (`Get-Date` on Windows, `date` on macOS/Linux), at 1.5x your first guess.
-- At most 5 short lines to the user between steps.
-- go.sh loads the GPU. If the user is screen-recording or editing, ask before rendering.
+- Nothing is uploaded or posted unless the user types **go** (step 13). Never ask for, print or open API keys: they live in the user's own environment or key file only.
+- No false claims: never "1 prompt", "one prompt", "one click" or "fully automatic". True: the user approved the story and the plan, and Claude wrote the shots, acting and code.
+- Original characters and content only. A reference **style** may be copied; its characters, names, logos and scripts may not.
+- Facts, and health facts above all, come from sources you checked, listed in `story.md`. Explain, never prescribe.
+- **Look at every still, strip and video frame yourself** (read the PNG) before you show it. Passing numbers is not passing.
+- **Never self-score.** Only a fresh critic agent scores.
+- Quote ETAs from the clock (`date`; on Windows `Get-Date`) at 1.5x your first guess. Rendering loads the GPU: if the user is screen-recording or editing, ask before rendering.
+- Show a picture or video with `open "<file>"` on macOS (`start "" "<file>"` on Windows), plus one line saying what it shows.
 
-## 0. Set up the project (once per Short)
-1. Windows: `Copy-Item -Recurse "SKILL\v3" "<work folder>\<slug>"` (outside OneDrive, for example `C:\shorts`). macOS/Linux: `cp -R "SKILL/v3" ~/shorts/<slug>` (outside iCloud Drive). That is P. Work inside P.
-2. **Target length:** ask once; default 60 s (the reference runs 56-65 s). **Quick run: 15 s = 450 frames at 30 fps, about 4 picture shots, about 55 words.** Everything scales: `go.sh` reads the length from the last `f_out` in `shots.json`.
-3. Fresh install: run `CHECKLIST.md` section A first.
+## The guide (13 steps)
 
-## 1. Reference measure
-The reference channel is already measured frame by frame (4 videos, 7,359 frames): `references/reference-style.md`. Its numbers are the defaults for every step below, and `gate.py` BAND and `audit.py` already use them. Copy the parts this Short needs (length, shots, sizes, moods, captions) into `critic/targets.md`.
-**New reference clip only:** measure it with `SKILL/measure/` (see its README). Do not use a 1 fps sheet: it misses 8-frame dissolves and 4-frame inserts, counts camera-move size changes as cuts, and on the same video gave saturation 41.9 against 31.4 measured on every frame (lesson 51). Steps: the automatic passes, then **one review agent per video** (`measure/REVIEW_BRIEF.md`; Opus at high effort, a fresh context each) that views every frame sheet and confirms every transition at full resolution. Then `bands.py` for the gate bands, and update `reference-style.md`.
+### 1. Start
+- Look for unfinished projects: `~/shorts/*/progress.md` (Windows: `C:\shorts\*\progress.md`) without `DONE`. If there are any, ask "Carry on with <slug> (stopped at <step>)?": **Carry on** / **Start a new Short**. To carry on, read its `brief.json` and `progress.md` and jump to the first unticked step.
+- First run on this computer (no `SKILL/.checked`): run `CHECKLIST.md` section A quietly (on macOS `setup-mac.sh` does it). Tell the user only what is missing and what you are installing. Write `SKILL/.checked` when it passes.
 
-## 2. Story: the paradox formula (GATE 1, the user approves)
-Write `story.md` (layout: `example-60s/story.md`; do NOT reuse its story):
-- **Sources** first: only facts you checked; list the caveats you dropped.
-- **Hook = a paradox in line 1:** two true things that should not both be true ("canned food existed 48 years before the can opener"). The hero and the want are in frame 1.
-- **Middle = escalating failed attempts**, each one visible gag per line (one noun or verb), with a hold on the reaction.
-- **Payoff resolves the paradox** with the real fact; the last frame loops to the first.
-- `## Narration`: numbered lines, about 3.75 words per second (reference 3.35-3.9; 60 s is about 220-245 words, 15 s about 55).
-- **Timing from the reference:** the hook sentence lands in the first 4 s; "You see," either explains right after the hook (about 5% in) or brings the reveal at about 65%; the twist or payoff sits in the last 10-15%, and the film ends on it (no outro). Speak to the viewer ("you") at least once.
-- Show the logline, the paradox, the numbered lines and the sources. Ask "Approve or change?". Continue only on approve.
+### 2. Idea
+Ask "What is this Short about?":
+- **I have an idea**: they type it.
+- **Give me 3 ideas**: if their niche is unknown, ask it in one line, then offer 3 one-line ideas, each with its hook fact, and let them pick.
+- **Make it from something I paste**: an article, notes or a fact; you pull the idea out.
 
-## 3. Voice (before the shots: the shots lock to it)
-Choose with the user:
-- **Free route (default): record yourself** reading the narration, one calm take, save as `voice/voice.mp3`. Transcribe locally: `whisper voice/voice.mp3 --model small --language en --word_timestamps True --output_format json --output_dir voice`, then `node voice/whisper-to-timing.mjs voice/voice.json`. Read `voice/voice-timing.json` against the script. (Whisper is a separate install: `pip install openai-whisper`.)
-- **ElevenLabs (optional, paid per character):** the user sets `$env:ELEVENLABS_API_KEY` in their own terminal. Tell them the character count first. `node voice/take.mjs <voiceId> voice` writes `voice/voice.mp3` and `voice/voice-timing.json`.
-- Sound effects: `voice/sfx/*.mp3` is a starter set (crate, bend, boot, rock, pan, clang, pop, ding, night, music). New ones: `node voice/sfx.mjs` (same key rule), or skip.
-- Frame of a word = `round(seconds*30)`.
+Then confirm the idea in one line.
 
-## 4. Contract + build
-1. Write `CONTRACT.md` (model: `references/contract-example.md`): length in frames, sets (`camp`, `insert`, `night`, `tent` ship in `lib/sets.py`), characters (`marcel`, `gaston`, `soldier`), props, the numbers to hit. A story needing a NEW set, prop or character means editing `lib/sets.py` or `lib/chars.py`: tell the user and budget the time.
-2. **Beat list first:** one narration line = one beat = one readable frame (line, noun/verb, impact word, frame).
-3. Write `shots.json` and `acting.json` from the beat list (schema: `example-60s/`, `shots/NOTES.md`; `shots/gen.js` is the generator the 60 s film used). Then `node shots/validate.js` (it now also warns on pacing). Edit and camera, from `reference-style.md`:
-   - **Picture shots:** about one every 4.3 s (3.1-5.1), none longer than 8.6 s, so a 60 s Short has about 15. Several narration beats live inside ONE shot. Join them with the camera, as `travel` shots or camera keys, not with cuts.
-   - **Transitions:** `dissolve` for nearly all of them (reference 95%), rendered as 8-frame crossfades with `DISSOLVE=cross`; 0-2 `cut` (an insert or the final impact); **no `whip`**, no dip to black. The camera keeps moving through every dissolve.
-   - **The camera moves on 79-96% of frames** and changes framing about every 1.35 s, mostly one step at a time (FS->MS, WS->FS, MS->MCU). Write those changes as **camera keys with `size`** (and `subj`) inside the shot: scene.py frames every key and glides through the middle ones.
-   - **Size mix (screen time):** XW 19%, WIDE 17%, MED 40% (FS 27 + MS 13), CU 13.5% (MCU 8 + CU 5), MACRO 11%. Wides are not dead air when the camera travels through the place. Faces at 30-40% of the frame belong to CU/MCU only.
-   - **Places:** about 9 locations a minute, revisiting 3-4 of them. About one location change in five is the camera flying from one place to the next with no cut.
-   - **Acting:** react, squash and lean on every line; a 12-24 frame reaction hold after each gag; no puff or blur on a gag frame.
-4. **Team (30 s and up):** one subagent per frame range. Each reads `references/beats-brief.md`, writes only `beats/<name>.json`, and reports the exact impact frame. For a 15 s run, build it yourself.
+### 3. Style
+Ask "Which look?":
+- **Bean world 3D**: cartoon bean characters in a painted 3D world (Blender). Ready. Best for history and paradox stories.
+- **Anatomy explainer**: warm 3D rooms, stylised adults, X-ray reveals, number callouts, top captions with a key-word box. Read `references/styles/anatomy-explainer.md` first. While its status is **in setup**, say in one line what is still missing, then ask: **Set the style up now** (follow `references/new-style.md` for that style file; it needs the reference reels) / **Use the bean world this time**.
+- **2D style**: then a second question with the 4 best fits from `references/style-catalogue.md` (flat, blueprint, pixel, woodcut, watercolour, glass, ASCII; voxel, lidar and teardown are 3D).
+- **New style from my reference videos**: follow `references/new-style.md`, then come back here.
 
-## 5. Gate: numbers AND look
-1. `bash gate.sh` renders one still per shot; `gate.py` prints PASS/FAIL per shot (saturation/luma bands, blown whites, crops). Fix FAILs; `tune.sh` tries grade overrides.
-2. `bash contact.sh 1 24` makes `gate/contact_1.png`. **Open it and look.** Per shot: gag object visible and big, faces readable, nothing cropped, no giant foreground clutter, characters not overlapping, the mood colour right.
-3. At most 3 gate rounds. Show the user the sheet; render only after they say "render".
+Make P:
+- Bean world: copy `SKILL/v3` to `~/shorts/<slug>` (outside iCloud Drive / OneDrive).
+- 2D: run `node SKILL/scripts/new-short.mjs "<title>" --style <style> --seconds <s>` right after step 4, because it needs the length.
 
-## 6. Render, mix, independent critic
-1. `DISSOLVE=cross bash go.sh r1` (native 1080x1920, 3 processes, plus the crossfade handles; about 21 min for 60 s on the author's GPU, so roughly 5-6 min for 15 s; give a clock-time ETA). Output `out/rounds/r1-silent.mp4`.
-2. Mix: write `voice/cues.json` from the impact frames (format in its `_note`), then `node voice/finish.mjs` (captions now follow the measured spec: line centre at 70.2%, no pop-in, 75% one-word cards, held until the next card). Output `out/short-v3-final.mp4`; copy it to `out/rounds/r1-final.mp4`.
-   Then `python3 audit.py` (`python audit.py` on Windows) (in P): one PASS/FAIL line per measured reference parameter (edit, sizes, camera motion, colour per mood, caption position and timing) written to `critic/audit.md`. The four reference videos pass it. Fix every FAIL that is not a deliberate choice before the critic round; if the caption baseline is off, move `captionY` in `voice/cues.json` by the difference.
-3. **Critic = a fresh subagent** that did not build the film. Give it the final mp4, the reference clip, `critic/RUBRIC-blank.md`, `critic/audit.md` and your suspicions to verify. It makes frames and cmp sheets, fills the rubric, writes `critic/critique-r1.md` with 3 fixes by FRAME RANGE. Verify each claim at full resolution before acting (lesson 28).
-4. Pass = criteria 1-4 each >= 7 and mean >= 8. The first Short took 12 renders; a 15 s one should need far fewer, but time the real run and report the real number.
+Write `P/brief.json` and `P/progress.md` (templates at the end).
 
-## 6b. Blender MCP route (optional: when a Blender MCP server is connected)
-The scripts stay the source of truth. Use MCP to **look and measure**, not to hand-build.
-- **Build the scene:** `bash save.sh` (in P) writes `scene.blend`. Open it in the live Blender with `execute_blender_code` (`bpy.ops.wm.open_mainfile(filepath=...)`). Never run scene.py inside the live session: it resets the file.
-- **Look:** jump to each camera-key frame and check it with `render_thumbnail_to_path`, or `get_screenshot_of_window_as_image` for blocking. This is faster than a gate render for camera and framing iteration.
-- **Measure:** query positions and project heads or props to the camera (`world_to_camera_view`) at each key. Use this to tune `KEYMUL` (or a key's own `hvmul`) until each key's framing matches its size.
-- **Write back:** put every change into `shots.json`, `beats/*.json` or `lib/*.py`, then rebuild. Edits made only in the .blend are lost on the next build.
-- **Renders stay on the CLI** (`go.sh`): a long render through an MCP call times out. `execute_blender_code_for_cli` suits short background jobs on `scene.blend`.
+### 4. Length
+Ask "How long?":
+- **Bean world:** 60 s (Recommended; the reference runs 56-65 s) / 30 s / 15 s quick test.
+- **Anatomy explainer:** the measured length once measured; until then 30 s / 45 s / 15 s quick test.
+- **2D:** 15 s / 20 s / 25 s (25 s is the most).
 
-## 7. One director per flagged beat
-Per flagged frame range, one subagent: reads `references/beats-brief.md`, `references/lessons.md`, the critique and the stills; writes only `beats/<range>.json`; re-renders only its range (`bash render.sh A B`, output in `render/`); makes a strip; LOOKS at it twice; reports the impact frame. Then redo steps 5-6 for that range. Stop at the pass bar or when the user says stop. Never "ship the best we have, call it a first try".
+### 5. Story
+Ask "Do you need a story?":
+- **Yes, write it for me** (Recommended).
+- **I have a story or outline**: they paste it; you shape it to the style's formula and keep their content.
+- **I already have the full script**: they paste it; it becomes the narration, and step 6 only checks its length.
 
-## 8. Lessons
-Append to `references/lessons.md` (numbered, one line: what the critic found, what fixed it). Copy new lessons back into SKILL's `references/lessons.md`.
+Write `P/story.md` with the style's formula:
+- bean world: the paradox formula, `references/route-blender.md` step 2;
+- anatomy explainer: section 7 of its style file;
+- 2D: `references/story-rules.md`.
 
-## 9. Upload (manual by default)
-Hand over `out/short-v3-final.mp4`. Titles start with a verb; the description has the fact, its source and `#Shorts`. The user uploads by hand. Auto-post only if the user asks: copy the final to `out/<slug>-9x16.mp4`, then `node "SKILL\scripts\post.mjs" "P" --platforms youtube` is a dry run; `--go` only after the user types "go" in this conversation. It needs their own `$env:BLOTATO_API_KEY` (generating it starts a paid plan). Private by default; `--public` only if told. Never handle the key.
+Sources first, then the logline and the beats. Show the logline, the beats and the sources, then ask "Approve the story?": **Approve** / **Change something**. Loop until they approve, then write the approval time into `story.md`.
+
+### 6. Voice-over script
+Ask "Do you want a voice-over?":
+- **Yes, write the script** (Recommended): numbered lines under `## Narration` in `story.md`, one line per beat, at about 3.75 words a second (15 s ≈ 55 words, 30 s ≈ 110, 45 s ≈ 170, 60 s ≈ 225). Show it, then ask **Approve** / **Change something**.
+- **Yes, I'll write it**: they paste it; you check its length against the target and say if it runs long or short.
+- **No voice-over**: music, sound effects and on-screen text only. The beat list sets the timing, so there are no word captions; skip step 7 and step 8's caption question.
+
+### 7. Voice
+Ask "Who reads it?":
+- **I'll record it (free)** (Recommended): show a read sheet with the numbered lines. Tips: a quiet room, the phone or Mac voice memo is fine, one calm take at a steady pace (about <N> s in total), a short pause between lines. They attach the file or save it in `P/voice/`; any audio format works, and you convert it to `voice/voice.mp3` with ffmpeg. Wait for it. Then time every word: Whisper, then `whisper-to-timing.mjs` (`references/route-blender.md` step 3). Read `voice-timing.json` against the script and fix mis-heard lines.
+- **AI voice (ElevenLabs, paid)**: tell them the character count first. The key stays out of the chat. They put one line, `ELEVENLABS_API_KEY=...`, in a plain-text file `~/.make-short-keys` (TextEdit: Format > Make Plain Text). You run `ELEVENLABS_ENV_FILE=~/.make-short-keys node voice/take.mjs <voiceId> voice` and never open or print that file. Ask for the voice ID from their ElevenLabs voice library (it is not secret); `brief.json` keeps it for next time.
+- **I already have the audio**: they attach it; continue as for a recording.
+
+### 8. Music and captions (two questions in one call)
+- "Music?" **Starter track** (Recommended) / **My own track** (attach) / **No music**.
+- "Captions?" **The style's own** (Recommended; bean: one big word at 70% of the height; anatomy: a top phrase with a key-word box) / **The other style's** / **None**.
+
+Sound effects on impacts are on by default. Say so in one line, without a question. For the anatomy explainer, you pick the key words and callouts from the script and show them in the plan (step 11).
+
+### 9. Ending
+Ask "How should it end?":
+- **Loop back to the start** (Recommended for the bean world).
+- **A follow line for my account**: ask for their @handle if `brief.json` doesn't have it. Never use the reference account's name.
+- **End on the payoff.**
+
+### 10. Check the brief
+Show the brief in at most 8 lines: idea, style, length, story, script, voice, music and captions, ending. Add the time it will take to build and render, as a clock time. Ask "Build it?": **Build it** (Recommended) / **Change something**.
+
+### 11. Build
+Follow the route. Every gate in it becomes a question here.
+- **Bean world:** `references/route-blender.md` steps 4-7 (contract, beats, shots, gate, render, mix, audit, critic, fix rounds) and 6b if Blender MCP is connected.
+- **2D:** `references/legacy-2d-route.md` steps 3-8 (character sheet, storyboard, render, QA, receipt).
+- **Anatomy explainer:** the route its style file names once its status is **ready**.
+
+The gates:
+1. **Plan:** show a short shot plan (shots, places, key moments, callouts), then ask "Looks right?" **Yes** / **Change something**.
+2. **Stills:** open the contact sheet, then ask "Render it? About <N> min, done around <HH:MM>." **Render** / **Change something**.
+3. **Render:** post one progress line every few minutes, then mix and audit.
+4. **Critic round:** show the critic's score and its 3 fixes in plain words, then ask:
+   - **Fix these and render again** (about <N> min; Recommended while below the pass bar);
+   - **Good enough, finish it**;
+   - **Stop here**.
+
+### 12. Final check
+Open the final video and ask "Happy with it?":
+- **Yes, finish**;
+- **Change something**: they say what; fix it and re-render only that range;
+- **Another critic round**.
+
+### 13. Publish and wrap up
+Ask "What now?":
+- **Write the title, description and hashtags; I'll upload** (Recommended): 3 titles that start with a verb; a description with the fact and its source; hashtags (`#Shorts` for YouTube, 3-5 topic tags for Reels). Save them in `P/upload-checklist.md` and show them.
+- **Post it for me (private first)**: `references/route-blender.md` step 9 (Blotato: a dry run first, the exact post shown, `--go` only after they type **go**).
+- **Nothing, I'm done.**
+
+Then write the lessons (`references/route-blender.md` step 8), add `DONE` to `progress.md`, and give the final file's location in one line.
+
+## Templates
+`P/brief.json` (add any extra answers; keep the keys):
+```json
+{"slug": "", "idea": "", "style": "bean-world | anatomy-explainer | 2d:<style> | <new style>", "length_s": 60,
+ "story": "written | user-outline | user-script", "story_approved": "", "voiceover": "written | user | none", "script_approved": "",
+ "voice": "recorded | elevenlabs:<voiceId> | file | none", "music": "starter | file:<path> | none", "captions": "style | other | none",
+ "ending": "loop | follow:@handle | payoff", "plan_approved": "", "render_approved": "", "critic_scores": [], "final_file": ""}
+```
+`P/progress.md`:
+```
+# <slug>
+- [ ] 1 start   - [ ] 2 idea   - [ ] 3 style   - [ ] 4 length   - [ ] 5 story   - [ ] 6 script   - [ ] 7 voice
+- [ ] 8 music & captions   - [ ] 9 ending   - [ ] 10 brief   - [ ] 11 build (plan / stills / render / critic)
+- [ ] 12 final   - [ ] 13 publish
+Stopped at: <step and what is next>
+```

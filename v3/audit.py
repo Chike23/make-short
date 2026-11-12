@@ -52,6 +52,18 @@ TO_ENGINE = {'EWS': 'XW', 'WS': 'WIDE', 'FS': 'MED', 'MS': 'MED', 'MCU': 'CU', '
 BAND = {  # signalstats on 1080x1920 RGB frames: YAVG p10..p90, SATAVG p10..p90 of reference frames per mood
     'day': (99, 146, 22, 44), 'dusk': (114, 153, 18, 35), 'interior': (67, 139, 19, 35), 'night': (69, 118, 29, 61)}
 
+# per-style targets: critic/targets.json overrides the numbers above for a style measured from other references
+# (written from references/styles/<style>.md). {"ref": {key: [target, low, high]}, "size_share": {...}, "band": {mood: [ylo, yhi, slo, shi]},
+#  "skip": ["caption_geometry", "caption_cards"]}. Missing file = the bean-world reference above.
+SKIP = set()
+_TGT = os.path.join(HERE, 'critic', 'targets.json')
+if os.path.exists(_TGT):
+    _t = json.load(open(_TGT, encoding='utf-8-sig'))
+    REF.update({k: tuple(v) for k, v in _t.get('ref', {}).items()})
+    SIZE_SHARE.update({k: tuple(v) for k, v in _t.get('size_share', {}).items()})
+    BAND.update({k: tuple(v) for k, v in _t.get('band', {}).items()})
+    SKIP = set(_t.get('skip', []))
+
 rows = []
 def check(name, val, key=None, rng=None, unit='', info=False, fmt='{:.2f}'):
     t, lo, hi = REF[key] if key else rng
@@ -183,6 +195,9 @@ for m, v in vals.items():
     check(f'{m}: SATAVG (signalstats, median)', s_, rng=((slo + shi) / 2, slo, shi), fmt='{:.0f}')
 
 # caption geometry: glyphs = near-white pixels next to a black outline, in the band around 70% of the height
+if 'caption_geometry' in SKIP:
+    rows.append(('INFO', 'Caption geometry', 'not checked (critic/targets.json "skip")', 'check the gate stills by eye'))
+    BANDS = []
 tops, bases, cxs, hs = [], [], [], []
 for band in BANDS:
     band = band.astype(np.int16)
@@ -205,7 +220,7 @@ if tops:
     check('Caption baseline (px at 1080x1920)', base, 'cap_base', fmt='{:.0f}')
     check('Caption cap height (px at 1080x1920)', base - top, 'cap_h', fmt='{:.0f}')
     check('Caption centre x (px at 1080x1920)', float(np.median(cxs)), 'cap_cx', fmt='{:.0f}')
-else:
+elif 'caption_geometry' not in SKIP:
     rows.append(('FAIL', 'Captions', 'none found near 70% of the height', 'every frame has a caption'))
 
 # ---------------------------------------------------------------- captions + narration (captions.ass, voice-timing.json)
@@ -213,7 +228,7 @@ ass = os.path.join(HERE, 'voice', 'captions.ass')
 tm = os.path.join(HERE, 'voice', 'voice-timing.json')
 def secs(t):
     h, m, s = t.split(':'); return int(h) * 3600 + int(m) * 60 + float(s)
-if os.path.exists(ass):
+if os.path.exists(ass) and 'caption_cards' not in SKIP:
     ev = []
     for line in open(ass, encoding='utf-8-sig'):
         if not line.startswith('Dialogue:'): continue

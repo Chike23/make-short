@@ -1,6 +1,6 @@
 # Review brief: frame-by-frame breakdown of one reference Short (one agent per video)
 
-You are measuring one 720×1280, 30 fps YouTube Short, frame by frame, so its editing style can be copied.
+You are measuring one Short or Reel (converted by `prep` to 720×1280 at 30 fps), frame by frame, so its editing style can be copied.
 The user's instruction for this work: "Don't tell me what you think of them. Measure them, frame by frame: colour,
 brightness, every cut, how often the shot size changes, how many locations, where the captions sit. One contact
 sheet per video, one table." Report measurements, not opinions.
@@ -10,7 +10,7 @@ That video is long continuous 3D camera moves joined mostly by ~8-frame dissolve
 smoke covering the lens, and two plain hard cuts. Do not assume your video is the same: verify everything.
 
 ## Your folder
-`<DIR>/` (one folder per reference) contains `video.mp4`, `frames/f_00001.jpg` … (**f_00001.jpg = frame 0**; frame i is
+`<DIR>/` (one folder per reference) contains `video.mp4` (720×1280, 30 fps), `source_meta.json` (the download's real frame rate: read its `note` first, because a 25 fps source has a repeated frame about every 6th frame and a 60 fps source loses every other frame), `frames/f_00001.jpg` … (**f_00001.jpg = frame 0**; frame i is
 `f_{i+1:05d}.jpg`), and outputs of automated steps:
 - `sheets/sheet_XXXX.png` — EVERY frame as a 90×160 thumbnail with its frame number, 240 per sheet. You must look at every sheet.
 - `diffplot.png`, `diffs.csv`, `log_small.txt` — frame-difference signals and a list of cut candidates (a candidate frame = first frame after a change). Candidates are hints only: continuous camera moves create false spikes, and dissolves/hidden cuts often do not spike.

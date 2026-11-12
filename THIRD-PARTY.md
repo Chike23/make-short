@@ -3,3 +3,4 @@
 - `engine/fonts/inter-*`: Inter, SIL Open Font License 1.1.
 - `engine/fonts/jetbrains-mono-*`: JetBrains Mono, SIL Open Font License 1.1.
 - `v3/voice/sfx/*.mp3`: generated with the ElevenLabs sound effects / music API by the author.
+- `v3/voice/fonts/Inter-*.otf`: Inter, SIL Open Font License 1.1 (full text in `v3/voice/fonts/OFL.txt`).
