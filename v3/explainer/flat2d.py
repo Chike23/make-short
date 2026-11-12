@@ -98,6 +98,54 @@ def glow_mat(hexrgb, power=1.6):
     _MATS[key] = m; return m
 
 
+MODE = 'flat'          # 'flat' = pure flat colour (2D world); 'lit' = takes the 3D world's lights (2D character in a 3D world)
+LIT = dict(shadow=(0.58, 0.55, 0.80), mid=(0.88, 0.85, 0.94), lit=(1.08, 1.0, 0.88), steps=(0.12, 0.2, 0.42, 0.5),
+           tint=0.35, self_em=0.14, gain=1.0)
+
+
+def lit(hexrgb):
+    """Flat colour that takes the scene's light like the skill's toon materials (look.toon_mat): the light level picks
+    one of three cel steps (cool purple shadow, neutral mid, warm lit), tinted by the light's colour, plus a little
+    self-light so faces stay readable. The object's alpha fades it."""
+    key = ('lit', hexrgb)
+    if key in _MATS: return _MATS[key]
+    m, nt = _base_mat(f'lit_{hexrgb}')
+    N, Ln = nt.nodes, nt.links
+    out = N.new('ShaderNodeOutputMaterial'); em = N.new('ShaderNodeEmission'); tr = N.new('ShaderNodeBsdfTransparent')
+    mix = N.new('ShaderNodeMixShader'); oi = N.new('ShaderNodeObjectInfo')
+    dif = N.new('ShaderNodeBsdfDiffuse'); dif.inputs['Color'].default_value = (1, 1, 1, 1)
+    s2r = N.new('ShaderNodeShaderToRGB'); bw = N.new('ShaderNodeRGBToBW')
+    g = N.new('ShaderNodeMath'); g.operation = 'MULTIPLY'; g.inputs[1].default_value = LIT['gain']
+    ramp = N.new('ShaderNodeValToRGB'); els = ramp.color_ramp.elements
+    a, b, c, d = LIT['steps']
+    spec = [(0.0, LIT['shadow']), (a, LIT['shadow']), (b, LIT['mid']), (c, LIT['mid']), (d, LIT['lit'])]
+    while len(els) < len(spec): els.new(0.5)
+    for e, (p, col) in zip(els, spec): e.position = p; e.color = (*col, 1)
+    # light colour tint = lit white diffuse / its luminance
+    mx = N.new('ShaderNodeMath'); mx.operation = 'MAXIMUM'; mx.inputs[1].default_value = 0.02
+    inv = N.new('ShaderNodeMath'); inv.operation = 'DIVIDE'; inv.inputs[0].default_value = 1.0
+    sc = N.new('ShaderNodeVectorMath'); sc.operation = 'SCALE'
+    tn = N.new('ShaderNodeMix'); tn.data_type = 'RGBA'; tn.inputs[0].default_value = LIT['tint']; tn.inputs[6].default_value = (1, 1, 1, 1)
+    base = N.new('ShaderNodeRGB'); base.outputs[0].default_value = (*lin(hexrgb), 1)
+    m1 = N.new('ShaderNodeMix'); m1.data_type = 'RGBA'; m1.blend_type = 'MULTIPLY'; m1.inputs[0].default_value = 1.0
+    m2 = N.new('ShaderNodeMix'); m2.data_type = 'RGBA'; m2.blend_type = 'MULTIPLY'; m2.inputs[0].default_value = 1.0
+    se = N.new('ShaderNodeMix'); se.data_type = 'RGBA'; se.blend_type = 'ADD'; se.inputs[0].default_value = LIT['self_em']
+    Ln.new(dif.outputs[0], s2r.inputs[0]); Ln.new(s2r.outputs[0], bw.inputs[0]); Ln.new(bw.outputs[0], g.inputs[0]); Ln.new(g.outputs[0], ramp.inputs['Fac'])
+    Ln.new(bw.outputs[0], mx.inputs[0]); Ln.new(mx.outputs[0], inv.inputs[1]); Ln.new(s2r.outputs[0], sc.inputs[0]); Ln.new(inv.outputs[0], sc.inputs['Scale'])
+    Ln.new(sc.outputs[0], tn.inputs[7])
+    Ln.new(base.outputs[0], m1.inputs[6]); Ln.new(ramp.outputs['Color'], m1.inputs[7])
+    Ln.new(m1.outputs[2], m2.inputs[6]); Ln.new(tn.outputs[2], m2.inputs[7])
+    Ln.new(m2.outputs[2], se.inputs[6]); Ln.new(base.outputs[0], se.inputs[7])
+    Ln.new(se.outputs[2], em.inputs['Color'])
+    Ln.new(oi.outputs['Alpha'], mix.inputs['Fac']); Ln.new(tr.outputs[0], mix.inputs[1]); Ln.new(em.outputs[0], mix.inputs[2])
+    Ln.new(mix.outputs[0], out.inputs['Surface'])
+    _MATS[key] = m; return m
+
+
+def surface(hexrgb):
+    return lit(hexrgb) if MODE == 'lit' else flat(hexrgb)
+
+
 def glow(name, cx, cz, rx, rz, hexrgb, parent=None, depth=0.0, power=1.6, alpha=1.0):
     """A soft radial glow centred on (cx, cz): bright in the middle, nothing at the rim. Blended (no dither noise)."""
     m, nt = _base_mat(f'glow_{name}')
@@ -167,8 +215,9 @@ def _curve(name, splines, smooth):
 def shape(name, pts, color, parent=None, depth=0.0, smooth=True, holes=(), mat=None, alpha=1.0):
     """A filled shape through `pts` [(x, z), ...] in absolute rest coordinates, hung on joint `parent`."""
     cu = _curve(name, [pts, *holes], smooth)
-    cu.materials.append(mat or flat(color))
+    cu.materials.append(mat or surface(color))
     ob = bpy.data.objects.new(name, cu); bpy.context.scene.collection.objects.link(ob)
+    ob['hex'] = color
     ob.rotation_euler = (math.pi / 2, 0, 0)
     if parent is not None:
         ob.parent = parent; px, pz = parent['pivot']

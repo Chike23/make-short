@@ -15,6 +15,9 @@ Followed from the guide in `SKILL.md` (step "Build") for the anatomy-explainer s
 - **She doesn't talk.** No lip-sync and no breathing layer. She reacts and acts to fit the story: one reaction or action per narration beat (shocked at a bad number, nods at good news, starts the exercise when the voice names it, celebrates the result). Blinks and a facial expression per beat are fine.
 - **Lively.** No idle hold longer than about 1.5 s. Prefer big, readable mocap moves over small gestures.
 - **The camera moves on every frame.** Every shot has a move (push in, pull out, arc, pan, tilt or dolly), plus handheld shake from Camera Shakify. Never locked off. Punch in on the key word of a line.
+- **2D characters in a 3D world (being tested, 12 Nov 2026).** The lead is a flat cut-out puppet (`explainer/lady2d.py` on `explainer/flat2d.py`), lit by the room (`flat2d.MODE = 'lit'`), with a soft drop shadow (`lady2d.blob_shadow`). The room is 3D in the skill's own toon look (`explainer/world3d.py` on `v3/lib/look.py`: cel shading, ink lines, painterly grade), with Poly Haven furniture repainted toon. Example: `explainer/scene_2d10.py`.
+- **Characters are always head-on to the camera.** As the camera moves, they turn about the vertical axis to face it on every frame (`lady2d.face_camera`). Keep camera moves within about 15° of her front, so the turn never shows.
+- **Render speed:** no world fog (it was most of the frame time) and shadows on the key light only. That's about 1.5-3 s a frame at 720x1280, 12 samples, scaled to 1080x1920 afterwards.
 
 ## 0. Project
 - Copy `SKILL/v3` to `~/shorts/<slug>` (P), and `SKILL/references/styles/anatomy-explainer.targets.json` to `P/critic/targets.json`.

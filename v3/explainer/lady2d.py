@@ -39,7 +39,10 @@ def build(name='lady', at=(0.0, 0.0), pal=PAL):
         g = F.copy_shape(o, o.name + '_x', P['ghost'], parent, depth, alpha=0.0)
         R['xray'].append(g); return g
 
-    def xr(o): o.color = (1, 1, 1, 0); R['xray'].append(o); return o
+    def xr(o):                                      # X-ray parts glow like a screen: flat, unlit
+        o.color = (1, 1, 1, 0); R['xray'].append(o)
+        if not o.name.endswith(('_halo_sl', '_halo_sr')): o.data.materials[0] = F.flat(o['hex'])
+        return o
 
     # ---- legs and hips
     for s, sx in (('sl', -1), ('sr', 1)):
@@ -100,7 +103,7 @@ def build(name='lady', at=(0.0, 0.0), pal=PAL):
         R['muscles'].append(xr(F.ellipse(f'{name}_forem_{s}', E[0], 0.99, 0.026, 0.075, P['muscle'], fj, -0.0092)))
         for k in range(3):                                      # pulse rings ("muscle is listening")
             rj = J[f'ring{k}_{s}'] = F.joint(f'{name}_ringj{k}_{s}', sh, (S[0], 1.255))
-            rg = F.ring(f'{name}_ring{k}_{s}', S[0], 1.255, 0.07, 0.009, P['glow'], rj, -0.0097, alpha=0.0)
+            rg = F.ring(f'{name}_ring{k}_{s}', S[0], 1.255, 0.07, 0.009, P['glow'], rj, -0.0097, alpha=0.0, mat=F.flat(P['glow']))
             rj.scale = (0.01, 0.01, 0.01); R['rings'].append((rj, rg))
 
     # ---- head
@@ -187,11 +190,11 @@ def pose(R, f0, f1, spec, interp='BEZIER', easing='AUTO'):
     if 'lift' in spec:
         F.key(root, 'location', F.now(root, 'location', f0, 2), f0, interp, easing, 2)
         F.key(root, 'location', spec['lift'], f1, 'BEZIER', 'AUTO', 2)
-    if 'squash' in spec:
+    if 'squash' in spec:                              # squash/stretch from the feet, so they stay on the floor
         sx, sz = spec['squash']
         for i, v in ((0, sx), (2, sz)):
-            F.key(hips, 'scale', F.now(hips, 'scale', f0, i), f0, interp, easing, i)
-            F.key(hips, 'scale', v, f1, 'BEZIER', 'AUTO', i)
+            F.key(root, 'scale', F.now(root, 'scale', f0, i), f0, interp, easing, i)
+            F.key(root, 'scale', v, f1, 'BEZIER', 'AUTO', i)
 
 
 BROWS = {'neutral': (0, 0.0), 'worried': (-15, 0.008), 'determined': (14, -0.007), 'surprised': (-5, 0.022), 'happy': (-4, 0.01)}
@@ -234,3 +237,50 @@ def sway(R, f0, f1, deg=1.2, period=60):
     j = R['j']['root']; f = f0; k = 0
     while f <= f1:
         F.key(j, 'rotation_euler', math.radians(deg if k % 2 else -deg), f, 'BEZIER', 'AUTO', 1); f += period // 2; k += 1
+
+
+CASTERS = ('tee', 'neck', 'face', 'hair', 'hair_back', 'waist', 'thigh_sl', 'thigh_sr', 'shinp_sl', 'shinp_sr', 'shoe_sl',
+           'shoe_sr', 'upper_sl', 'upper_sr', 'sleeve_sl', 'sleeve_sr', 'forearm_sl', 'forearm_sr', 'handp_sl', 'handp_sr')
+
+
+def shadows(R, behind=0.04):
+    """In a 3D world: her drawn shapes cast no shadows (no self-shadowing between the paper layers); invisible copies
+    of her silhouette, just behind her, cast her shadow on the floor and walls and follow every pose."""
+    name = R['name']
+    for o in bpy.data.objects:
+        if o.name.startswith(name + '_') and o.type == 'CURVE': o.visible_shadow = False
+    R['casters'] = []
+    for n in CASTERS:
+        nm = f'{name}_{n}'                           # joints can share a name with a shape: take the shape
+        o = next((x for x in bpy.data.objects if x.type == 'CURVE' and (x.name == nm or x.name.startswith(nm + '.'))), None)
+        if o is None: continue
+        c = F.copy_shape(o, o.name + '_cast', '#000000', o.parent, o.location[1] + behind)
+        c.visible_camera = False; c.visible_shadow = True
+        for a in ('visible_diffuse', 'visible_glossy', 'visible_transmission', 'visible_volume_scatter'):
+            try: setattr(c, a, False)
+            except Exception: pass
+        R['casters'].append(c)
+    return R['casters']
+
+
+def blob_shadow(R, rx=0.46, ry=0.2, at=(0.1, 0.12), color='#2a1626', alpha=0.55, frames=None):
+    """Soft drop shadow on the floor under her (a 2D character in a 3D world): a dark radial blur, slightly behind and
+    to the side of her feet. It shrinks and fades as she leaves the ground (root height), so hops read."""
+    o = F.glow(f"{R['name']}_blob", 0, 0, rx, ry, color, None, 0.0, power=1.2, alpha=alpha)
+    o.rotation_euler = (0, 0, 0); o.location = (at[0], at[1], 0.026)
+    o.visible_shadow = False
+    if frames:
+        sc = bpy.context.scene; root = R['j']['root']
+        for f in range(frames[0], frames[1] + 1):
+            sc.frame_set(f); h = max(0.0, root.location[2])
+            k = max(0.55, 1 - 3.0 * h)
+            F.key(o, 'scale', (k, k, 1), f, 'LINEAR'); F.key(o, 'color', alpha * k, f, 'LINEAR', 'AUTO', 3)
+    return o
+
+
+def face_camera(R, cam):
+    """House rule: 2D characters are always head-on to the camera. As the camera moves, the whole puppet turns
+    (about the vertical axis only) to face it on every frame."""
+    c = R['j']['root'].constraints.new('LOCKED_TRACK')
+    c.name = 'face_camera'; c.target = cam; c.track_axis = 'TRACK_NEGATIVE_Y'; c.lock_axis = 'LOCK_Z'
+    return c
