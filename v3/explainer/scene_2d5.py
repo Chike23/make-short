@@ -147,7 +147,8 @@ def camera():
     lens(93, 61); lens(106, 58)
     at(100, -0.03, -2.52, 1.32, 0.5)
     at(150, 0.0, -2.62, 1.35, 1.5)                                          # slow pull out to the end
-    lens(150, 55)
+    at(165, 0.01, -2.64, 1.355, 1.7)                                        # keep drifting through the last frame
+    lens(150, 55); lens(165, 54.5)
     C.add_shake(cam, 'THE_WEDDING', 0.6)
     return cam
 
