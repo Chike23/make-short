@@ -64,6 +64,32 @@ def ease(t, kind='inout'):
     return t * t * (3 - 2 * t)
 
 
+_clip_cache = {}
+def clip_frame(spec, t):
+    """A frame from a rendered clip: spec = {"video": "renders/anim/s01_0001-0110.mp4", "first": 1}. "first" is the
+    Blender frame of the clip's first frame; time t maps to Blender frame round(t * 30) + 1 (held at the ends).
+    The clip is unpacked once to PNGs next to it (alpha kept for QuickTime RLE / PNG clips)."""
+    path = spec['video'] if os.path.isabs(spec['video']) else os.path.join(P, spec['video'])
+    d = os.path.splitext(path)[0] + '_frames'
+    if not os.path.isdir(d) or not os.listdir(d):
+        os.makedirs(d, exist_ok=True)
+        subprocess.run(['ffmpeg', '-v', 'error', '-i', path, '-start_number', '0', '-pix_fmt', 'rgba', os.path.join(d, '%05d.png')], check=True)
+    n = len([x for x in os.listdir(d) if x.endswith('.png')])
+    k = min(max(int(round(t * FPS)) + 1 - int(spec.get('first', 1)), 0), n - 1)
+    key = (d, k)
+    if key not in _clip_cache:
+        if len(_clip_cache) > 24: _clip_cache.pop(next(iter(_clip_cache)))
+        im = cv2.imread(os.path.join(d, f'{k:05d}.png'), cv2.IMREAD_UNCHANGED)
+        if im.shape[2] == 3: im = np.dstack([im, np.full(im.shape[:2], 255, np.uint8)])
+        _clip_cache[key] = im.astype(np.float32) / 255.0
+    return _clip_cache[key]
+
+
+def source(spec, t):
+    """A shot base or layer: a still (path) or a clip ({"video": ..., "first": ...})."""
+    return clip_frame(spec, t) if isinstance(spec, dict) else img(spec)
+
+
 _img_cache = {}
 def img(path):
     if path not in _img_cache:
@@ -78,13 +104,17 @@ def img(path):
 
 
 _glow_cache = {}
-def glow_of(path, radius):
-    key = (path, radius)
-    if key not in _glow_cache:
-        li = img(path); bright = li[..., :3] * li[..., 3:4]
+def glow_img(li, radius):
+    key = (id(li), radius)
+    hit = _glow_cache.get(key)
+    if hit is None or hit[0] is not li:                                # keep li alive in the cache so its id stays unique
+        if len(_glow_cache) > 8: _glow_cache.pop(next(iter(_glow_cache)))
+        bright = li[..., :3] * li[..., 3:4]
         lum = bright.max(axis=2, keepdims=True); bright = bright * np.clip((lum - 0.45) / 0.4, 0, 1)
-        _glow_cache[key] = cv2.GaussianBlur(bright, (0, 0), radius)
-    return _glow_cache[key]
+        small = cv2.resize(bright, (bright.shape[1] // 4, bright.shape[0] // 4), interpolation=cv2.INTER_AREA)
+        hit = (li, cv2.resize(cv2.GaussianBlur(small, (0, 0), radius / 4), (bright.shape[1], bright.shape[0])))
+        _glow_cache[key] = hit
+    return hit[1]
 
 
 # ------------------------------------------------------------------ timeline
@@ -101,16 +131,16 @@ for s in shots:
     if isinstance(tr, str): tr = {'type': tr}
     if tr['type'] not in DEFAULT_FRAMES: raise SystemExit(f"{s['id']}: unknown transition {tr['type']}")
     tr.setdefault('frames', DEFAULT_FRAMES[tr['type']]); s['_tr'] = tr
-    base = img(s['base']); s['_size'] = base.shape[1], base.shape[0]
+    base = source(s['base'], s['_t0']); s['_size'] = base.shape[1], base.shape[0]
     for L in s.get('layers', []):
         L['_in'] = when(L.get('in'), s['_t0']); L['_out'] = when(L.get('out'), None)
-        if 'img' in L and img(L['img']).shape[:2] != base.shape[:2]:
+        if 'img' in L and source(L['img'], L['_in']).shape[:2] != base.shape[:2]:
             raise SystemExit(f"{s['id']}: layer {L['img']} is not the same size as the base (render both from the same camera)")
 
 
 def shot_frame(s, t):
     """The shot at time t (seconds), 1080x1920 BGR float, camera and layers applied."""
-    comp = img(s['base'])[..., :3].copy()
+    comp = source(s['base'], t)[..., :3].copy()
     for L in s.get('layers', []):
         fade = max(L.get('fade', 0.3), 1e-3)
         a = ease((t - L['_in']) / fade, 'linear')
@@ -119,9 +149,9 @@ def shot_frame(s, t):
         if a <= 0: continue
         if 'dim' in L:
             comp *= 1 - L['dim'] * a; continue
-        li = img(L['img']); rgb, al = li[..., :3], li[..., 3:4] * a
+        li = source(L['img'], t); rgb, al = li[..., :3], li[..., 3:4] * a
         if L.get('glow'):                                              # soft bloom around bright parts (bones, muscles)
-            comp = np.minimum(comp + glow_of(L['img'], L.get('glow_radius', 18)) * L['glow'] * a, 1.0)
+            comp = np.minimum(comp + glow_img(li, L.get('glow_radius', 18)) * L['glow'] * a, 1.0)
         mode = L.get('mode', 'normal')
         if mode == 'add': comp = np.minimum(comp + rgb * al, 1.0)
         elif mode == 'screen': comp = 1 - (1 - comp) * (1 - rgb * al)

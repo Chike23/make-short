@@ -2,7 +2,7 @@
 
 Followed from the guide in `SKILL.md` (step "Build") for the anatomy-explainer style, once `references/styles/anatomy-explainer.md` says **ready**. The guide has already settled the idea, length, story, script, voice, music, captions and ending in `P/brief.json`: do not ask again. The approvals (plan, stills, render) still stop and wait, through the guide's question format.
 
-**The choice made for this style (12 Nov 2026): Blender makes the pictures.** The reference animates mostly in the edit (still frames, slow zooms, layers fading in, preset transitions), so Blender renders **single frames**: a base image per shot, plus layer passes from the same camera. `explainer/compose.py` makes them move.
+**The choice made for this style (12 Nov 2026): Blender makes the pictures, and the lead is animated.** The first test with stills and 2D zooms felt lifeless. So the lead is now rigged on the free Quaternius animation library (`explainer/rig.py`). She plays its clips (talking gestures, idle, walk, sit) plus layered actions (arm curls), and she blinks and moves her mouth with the voice. Each shot is rendered as a short clip with its own camera move, plus an X-ray pass. `explainer/compose.py` joins the clips with the measured transitions and adds the layers. Props and infographic shots can still be stills with a slow zoom.
 
 ## 0. Project
 - Copy `SKILL/v3` to `~/shorts/<slug>` (P), and `SKILL/references/styles/anatomy-explainer.targets.json` to `P/critic/targets.json`.
@@ -24,7 +24,12 @@ Also write `voice/cues.json`:
 
 Show the plan in plain words and ask "Looks right?".
 
-## 2. Render the stills in Blender
+## 2. Render the shots in Blender (clips; stills for props)
+- Follow `explainer/scene_anim14.py`: `build()`, then `save_jobs()`, then `launch()`. Background renders run at about 1.1 s a frame at 720x1280. Poll `renders/anim/render.log` until `ALL_DONE`, then stage the clips.
+- Pick a clip per shot to match what she says: `Idle_Talking_Loop` while she explains, `Idle_Loop` plus `curl()` for an exercise, `Walk_Loop` to enter.
+- For a motion the library lacks, film it on a phone, then convert it with Rokoko Vision (free, single camera). Or layer an action on top, as `curl()` does.
+
+### Stills (props, stage shots)
 - Build or reuse the sets and the lead from the Blender kit for this style (see the style file, section 6). Every render: 1350x2400, EEVEE.
 - For each shot, render to `P/renders/`:
   - `<id>.png`: the base;

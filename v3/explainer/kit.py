@@ -32,6 +32,8 @@ def reset():
     sc.render.engine = 'BLENDER_EEVEE'
     sc.render.resolution_x, sc.render.resolution_y = RES
     sc.render.resolution_percentage = 100
+    try: sc.render.image_settings.media_type = 'IMAGE'     # Blender 5: a video output from an earlier job blocks PNG
+    except Exception: pass
     sc.render.image_settings.file_format = 'PNG'
     sc.render.image_settings.color_mode = 'RGBA'
     for k, v in dict(taa_render_samples=48, use_shadows=True, shadow_ray_count=2, shadow_step_count=8,
