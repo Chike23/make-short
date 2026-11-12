@@ -17,7 +17,7 @@ explainer/shots.json (see explainer/README.md):
  "shots": [
   {"id": "s01", "at": 0, "base": "renders/s01.png",
    "camera": {"from": [1.0, 0.5, 0.5], "to": [1.08, 0.5, 0.42], "ease": "inout"},   # [zoom, centre x, centre y], 0..1 of the image
-   "layers": [{"img": "renders/s01_xray.png", "in": "2:bones", "fade": 0.3, "out": "3:then", "mode": "normal"},
+   "layers": [{"img": "renders/s01_xray.png", "in": "2:bones", "fade": 0.3, "out": "3:then", "mode": "normal", "glow": 0.8},
               {"dim": 0.45, "in": "4:percent", "fade": 0.2}],                         # darken the shot under a stat callout
    "transition_in": {"type": "crossfade", "frames": 3}}]}
 "at", "in" and "out" are seconds or "line:wordStem" (that word's start in voice/voice-timing.json).
@@ -77,6 +77,16 @@ def img(path):
     return _img_cache[path]
 
 
+_glow_cache = {}
+def glow_of(path, radius):
+    key = (path, radius)
+    if key not in _glow_cache:
+        li = img(path); bright = li[..., :3] * li[..., 3:4]
+        lum = bright.max(axis=2, keepdims=True); bright = bright * np.clip((lum - 0.45) / 0.4, 0, 1)
+        _glow_cache[key] = cv2.GaussianBlur(bright, (0, 0), radius)
+    return _glow_cache[key]
+
+
 # ------------------------------------------------------------------ timeline
 shots = SPEC['shots']
 for s in shots: s['_t0'] = when(s.get('at'), 0.0)
@@ -110,6 +120,8 @@ def shot_frame(s, t):
         if 'dim' in L:
             comp *= 1 - L['dim'] * a; continue
         li = img(L['img']); rgb, al = li[..., :3], li[..., 3:4] * a
+        if L.get('glow'):                                              # soft bloom around bright parts (bones, muscles)
+            comp = np.minimum(comp + glow_of(L['img'], L.get('glow_radius', 18)) * L['glow'] * a, 1.0)
         mode = L.get('mode', 'normal')
         if mode == 'add': comp = np.minimum(comp + rgb * al, 1.0)
         elif mode == 'screen': comp = 1 - (1 - comp) * (1 - rgb * al)
