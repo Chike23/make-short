@@ -14,7 +14,7 @@ import flat2d as F
 PAL = dict(skin='#eab896', skin_sh='#d49a78', hair='#dedad5', hair_sh='#b9b2ac', top='#2fa39a', top_sh='#23867f',
            trousers='#3b3b4c', shoe='#f1ede6', eye='#ffffff', pupil='#2b2220', mouth='#6b2a2c', tongue='#e3746c',
            teeth='#ffffff', brow='#9a918a', blush='#f2958a', nose='#d99c7c',
-           ghost='#1b2a50', bone='#f4efe4', muscle='#ff5468', glow='#ff6b7d')
+           ghost='#34408a', bone='#f4efe4', muscle='#ff5468', glow='#ff6b7d')
 
 SH, EL, WR = (0.2, 1.385), (0.2, 1.11), (0.2, 0.855)        # shoulder, elbow, wrist (x mirrored per side)
 L1, L2 = SH[1] - EL[1], EL[1] - WR[1]
@@ -27,8 +27,17 @@ def _arc_pts(cx, cz, w, h, t, n=10):
     return top + bot
 
 
-def build(name='lady', at=(0.0, 0.0), pal=PAL):
-    P = pal; R = {'name': name, 'xray': [], 'muscles': [], 'halos': [], 'rings': []}
+# other cast members: same rig, own palette and hair ('man' = short crop, no blush)
+YOUNG_MAN = dict(PAL, skin='#c98d66', skin_sh='#ad7351', hair='#2a1d18', hair_sh='#1c1310', hair_hl='#4a3a32', top='#e2574c',
+                 top_sh='#c2443b', trousers='#2e3550', brow='#2a1d18', nose='#b8805c', blush_a=0.0)
+SON = dict(PAL, hair='#6b4a32', hair_sh='#523826', hair_hl='#8a6a50', top='#4f6fb0', top_sh='#3f5c96', trousers='#4a4036',
+           brow='#5a3e2a', blush_a=0.15)
+DOCTOR = dict(PAL, skin='#8d5a3c', skin_sh='#74472e', hair='#1f1714', hair_sh='#140e0c', hair_hl='#3a2e2a', top='#f4f1ec',
+              top_sh='#d9d4cc', trousers='#3b4a6b', brow='#1f1714', nose='#7a4a30', blush_a=0.0)
+
+
+def build(name='lady', at=(0.0, 0.0), pal=PAL, style='lady'):
+    P = pal; R = {'name': name, 'xray': [], 'muscles': [], 'halos': [], 'rings': [], 'style': style}
     J = R['j'] = {}
     root = J['root'] = F.joint(f'{name}_root', None, (0, 0)); root.location = (at[0], 0, at[1])
     hips = J['hips'] = F.joint(f'{name}_hips', root, (0, 0.93))
@@ -109,17 +118,25 @@ def build(name='lady', at=(0.0, 0.0), pal=PAL):
     # ---- head
     for sx in (-1, 1):
         F.ellipse(f'{name}_ear_{sx}', 0.135 * sx, 1.62, 0.026, 0.04, P['skin_sh'], head, -0.008)
-    F.shape(f'{name}_hair_back', F.ellipse_pts(0, 1.665, 0.168, 0.18, 12), P['hair_sh'], head, -0.007)
+    if style == 'man': F.shape(f'{name}_hair_back', F.ellipse_pts(0, 1.69, 0.148, 0.15, 12), P['hair_sh'], head, -0.007)
+    else: F.shape(f'{name}_hair_back', F.ellipse_pts(0, 1.665, 0.168, 0.18, 12), P['hair_sh'], head, -0.007)
     F.shape(f'{name}_face', [(0, 1.80), (0.1, 1.775), (0.136, 1.70), (0.135, 1.61), (0.115, 1.53), (0.065, 1.478),
                              (0, 1.465), (-0.065, 1.478), (-0.115, 1.53), (-0.135, 1.61), (-0.136, 1.70), (-0.1, 1.775)],
             P['skin'], head, -0.010)
-    F.shape(f'{name}_hair', [(-0.152, 1.60), (-0.158, 1.69), (-0.13, 1.785), (-0.06, 1.84), (0.03, 1.848), (0.11, 1.81),
-                             (0.155, 1.73), (0.158, 1.62), (0.142, 1.60), (0.13, 1.675), (0.09, 1.722), (0.02, 1.733),
-                             (-0.05, 1.716), (-0.11, 1.682), (-0.137, 1.635)], P['hair'], head, -0.018)
-    F.shape(f'{name}_hair_hl', [(-0.07, 1.80), (-0.01, 1.828), (0.06, 1.815), (0.0, 1.805)], '#f3f0ec', head, -0.0185)
+    if style == 'man':                                          # short crop with a side part
+        F.shape(f'{name}_hair', [(-0.141, 1.66), (-0.146, 1.725), (-0.122, 1.792), (-0.06, 1.828), (0.03, 1.834), (0.11, 1.805),
+                                 (0.146, 1.735), (0.143, 1.66), (0.131, 1.70), (0.09, 1.742), (0.03, 1.752), (-0.02, 1.76),
+                                 (-0.07, 1.745), (-0.115, 1.72), (-0.13, 1.69)], P['hair'], head, -0.018)
+        F.shape(f'{name}_hair_hl', [(-0.06, 1.805), (0.0, 1.822), (0.06, 1.81), (0.0, 1.8)], P.get('hair_hl', '#4a3a32'), head, -0.0185)
+    else:
+        F.shape(f'{name}_hair', [(-0.152, 1.60), (-0.158, 1.69), (-0.13, 1.785), (-0.06, 1.84), (0.03, 1.848), (0.11, 1.81),
+                                 (0.155, 1.73), (0.158, 1.62), (0.142, 1.60), (0.13, 1.675), (0.09, 1.722), (0.02, 1.733),
+                                 (-0.05, 1.716), (-0.11, 1.682), (-0.137, 1.635)], P['hair'], head, -0.018)
+        F.shape(f'{name}_hair_hl', [(-0.07, 1.80), (-0.01, 1.828), (0.06, 1.815), (0.0, 1.805)], P.get('hair_hl', '#f3f0ec'), head, -0.0185)
     F.ellipse(f'{name}_nose', 0, 1.598, 0.016, 0.024, P['nose'], head, -0.012)
     for sx in (-1, 1):
-        F.ellipse(f'{name}_blush_{sx}', 0.085 * sx, 1.585, 0.026, 0.014, P['blush'], head, -0.011, alpha=0.45)
+        if P.get('blush_a', 0.45) > 0:
+            F.ellipse(f'{name}_blush_{sx}', 0.085 * sx, 1.585, 0.026, 0.014, P['blush'], head, -0.011, alpha=P.get('blush_a', 0.45))
     # eyes: four drawings each, pupils on a look joint
     R['eyes'] = {k: [] for k in ('open', 'wide', 'closed', 'happy')}
     for s, sx in (('sl', -1), ('sr', 1)):
@@ -134,7 +151,8 @@ def build(name='lady', at=(0.0, 0.0), pal=PAL):
         R['eyes']['happy'].append(F.shape(f'{name}_eyeH_{s}', _arc_pts(cx, cz - 0.006, 0.048, 0.016, 0.009), P['pupil'], head, -0.012))
         bj = J[f'brow_{s}'] = F.joint(f'{name}_brow_{s}', head, (cx, 1.69))
         inner, outer = (cx - 0.028 * sx, 1.692), (cx + 0.028 * sx, 1.687)      # inner end a touch higher
-        F.limb(f'{name}_brow_{s}', outer, inner, 0.012, 0.014, P['brow'], bj, -0.013)
+        bw = (0.017, 0.02) if style == 'man' else (0.012, 0.014)
+        F.limb(f'{name}_brow_{s}', outer, inner, bw[0], bw[1], P['brow'], bj, -0.013)
     # mouths
     mj = J['mouth'] = F.joint(f'{name}_mouthj', head, (0, 1.54))
     M = R['mouth'] = {}
@@ -323,7 +341,8 @@ def cycle(R, f0, f1, step=8, bob=0.022, lift=0.9, sway=2.5, arms=8.0, arm_base=(
     sway over the standing leg and the arms swing against the legs. Use with travel() for the same frames.
     arms=None leaves the arms in whatever pose they hold (hands clasped, a prop)."""
     J = R['j']; root = J['root']; sc = bpy.context.scene
-    if carry: arms, arm_base, fore = 3.0, (5, 5), 4
+    if carry:                                   # carrying: small swing, unless the caller tunes it
+        arms = 3.0 if arms == 8.0 else arms; arm_base = (5, 5) if arm_base == (9, 9) else arm_base; fore = 4 if fore == 12 else fore
     f, k = f0, 0
     while f < f1:
         up = 'sl' if k % 2 == 0 else 'sr'; down = 'sr' if up == 'sl' else 'sl'
@@ -362,8 +381,11 @@ def jog(R, f0, f1, path, ground=None, ease=(False, True), **kw):
     return walk(R, f0, f1, path, ground=ground, ease=ease, **kw)
 
 
-def hold(R, obj, side='sr', offset=(0.0, -0.06, -0.055)):
-    """Put a 3D prop (bag, dumbbell) in her hand: it follows the hand joint from then on."""
+def hold(R, obj, side='sr', offset=(0.0, -0.06, -0.055), upright=True):
+    """Put a 3D prop (bag, jar, dumbbell) in her hand: it follows the hand joint from then on. upright: the prop keeps
+    the character's own orientation (a jar stays upright, a bag hangs, a dumbbell stays level) whatever the arm does."""
     j = R['j'][f'hand_{side}']
     obj.parent = j; obj.location = offset; obj.matrix_parent_inverse.identity()
+    if upright:
+        c = obj.constraints.new('COPY_ROTATION'); c.target = R['j']['root']; c.name = 'upright'
     return obj
