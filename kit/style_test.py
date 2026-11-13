@@ -30,7 +30,7 @@ cast_ = [cast('lead', (-0.6, 0.3), face=('open', 'smile', 'happy'), f0=F0, f1=F1
          cast('doc', (0.65, 0.3), pal=L.DOCTOR, face=('happy', 'grin', 'happy'), f0=F0, f1=F1),
          cast('young', (1.2, 0.7), pal=L.YOUNG_MAN, style='man', face=('open', 'flat', 'worried'), f0=F0, f1=F1)]
 light('kitchen', F0, F1)
-shoot('t1_cast', [dict(f=F0, size='FS', at=Vector((0.3, 0.45, 0)), H=3.3, az=-4, el=5, lens=30)], cast_[0]['j']['torso'])
+shoot('t1_cast', [dict(f=F0, size='FS', at=Vector((0.3, 0.45, 0)), H=4.4, cz=1.1, az=-4, el=5, lens=28)], cast_[0]['j']['torso'])
 # 2. a day exterior, wide: sky, haze, sun shadows, set colours
 K.CAST.clear(); setup(F0, F1); info = S6.street()
 J = cast('lead', (0.2, 3.0), face=('open', 'smile', 'neutral'), f0=F0, f1=F1)
@@ -45,5 +45,5 @@ shoot('t3_night', [dict(f=F0, size='FS', at=Vector((0.0, -0.6, S6.LANDING_Z)), c
 K.CAST.clear(); setup(F0, F1); S6.kitchen()
 J = cast('lead', (0.3, 0.2), face=('open', 'smile', 'happy'), f0=F0, f1=F1)
 light('kitchen', F0, F1)
-shoot('t4_closeup', [dict(f=F0, size='CU', at=Vector((0.3, 0.2, 0)), az=4, el=3, lens=45)], J['j']['torso'])
+shoot('t4_closeup', [dict(f=F0, size='MCU', at=Vector((0.3, 0.2, 0)), az=4, el=3, lens=45)], J['j']['torso'])
 print('STYLE_TEST', out, flush=True)
