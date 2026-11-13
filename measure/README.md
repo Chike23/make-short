@@ -12,11 +12,15 @@ The results for the four reference videos are already in `../references/referenc
 - `ffmpeg`.
 - macOS: `brew install ffmpeg tesseract`, then `pip3 install numpy opencv-python pandas pillow openpyxl pytesseract`.
 
-## Steps (one folder per reference video, `<DIR>/video.mp4`)
+## Everything is measured at 30 fps
+
+References come from YouTube, Instagram and TikTok at 24, 25, 30, 50 or 60 fps and 720 to 1080 wide. `prep` converts each one to **720×1280 at exactly 30 fps** (constant frame rate) before anything is measured, so every number (shot length, dissolve length, caption timing) is in the same 30 fps frames as our renders. The original download stays in the folder and `source_meta.json` records its real size and frame rate, plus a note when the conversion repeated or dropped frames. `measure` and `small` refuse to run on a video that is not 720×1280 at 30 fps.
+
+## Steps (one folder per reference video: put the download in `<DIR>/`, any name, any frame rate)
 
 ```bash
 M=<SKILL>/measure
-mkdir -p <DIR>/frames && ffmpeg -i <DIR>/video.mp4 -vsync 0 -q:v 3 <DIR>/frames/f_%05d.jpg   # f_00001.jpg = frame 0
+python3 -I $M/pipeline.py prep     <DIR>    # any download -> video.mp4 at 720x1280, 30 fps + every frame as frames/f_00001.jpg (= frame 0)
 python3 $M/pipeline.py capband  <DIR>    # finds the caption line
 python3 $M/pipeline.py small    <DIR>    # 90x160 frames, frame-difference signals, cut candidates, diffplot.png
 python3 $M/pipeline.py sheets   <DIR>    # EVERY frame as numbered thumbnails, 240 per sheet

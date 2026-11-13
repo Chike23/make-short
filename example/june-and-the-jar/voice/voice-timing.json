@@ -1,0 +1,1359 @@
+{
+ "voiceId": "nPczCjzI2devNBz1zQrb",
+ "duration": 61.671,
+ "chars": 1287,
+ "lines": [
+  {
+   "line": 1,
+   "text": "At sixty-two, June couldn't open a jar of pickles.",
+   "start": 0.071,
+   "end": 2.836,
+   "words": [
+    {
+     "w": "At",
+     "start": 0.071,
+     "end": 0.214
+    },
+    {
+     "w": "sixty-two,",
+     "start": 0.285,
+     "end": 1.035
+    },
+    {
+     "w": "June",
+     "start": 1.213,
+     "end": 1.427
+    },
+    {
+     "w": "couldn't",
+     "start": 1.498,
+     "end": 1.641
+    },
+    {
+     "w": "open",
+     "start": 1.712,
+     "end": 1.855
+    },
+    {
+     "w": "a",
+     "start": 1.926,
+     "end": 1.998
+    },
+    {
+     "w": "jar",
+     "start": 2.069,
+     "end": 2.14
+    },
+    {
+     "w": "of",
+     "start": 2.212,
+     "end": 2.283
+    },
+    {
+     "w": "pickles.",
+     "start": 2.354,
+     "end": 2.836
+    }
+   ]
+  },
+  {
+   "line": 2,
+   "text": "She blamed the lid.",
+   "start": 2.961,
+   "end": 3.906,
+   "words": [
+    {
+     "w": "She",
+     "start": 2.961,
+     "end": 3.104
+    },
+    {
+     "w": "blamed",
+     "start": 3.139,
+     "end": 3.318
+    },
+    {
+     "w": "the",
+     "start": 3.389,
+     "end": 3.46
+    },
+    {
+     "w": "lid.",
+     "start": 3.532,
+     "end": 3.906
+    }
+   ]
+  },
+  {
+   "line": 3,
+   "text": "You see, after forty, your muscles quietly start to disappear.",
+   "start": 4.004,
+   "end": 7.393,
+   "words": [
+    {
+     "w": "You",
+     "start": 4.004,
+     "end": 4.076
+    },
+    {
+     "w": "see,",
+     "start": 4.147,
+     "end": 4.432
+    },
+    {
+     "w": "after",
+     "start": 4.504,
+     "end": 4.789
+    },
+    {
+     "w": "forty,",
+     "start": 4.932,
+     "end": 5.36
+    },
+    {
+     "w": "your",
+     "start": 5.431,
+     "end": 5.503
+    },
+    {
+     "w": "muscles",
+     "start": 5.574,
+     "end": 5.859
+    },
+    {
+     "w": "quietly",
+     "start": 6.073,
+     "end": 6.359
+    },
+    {
+     "w": "start",
+     "start": 6.43,
+     "end": 6.573
+    },
+    {
+     "w": "to",
+     "start": 6.609,
+     "end": 6.644
+    },
+    {
+     "w": "disappear.",
+     "start": 6.716,
+     "end": 7.393
+    }
+   ]
+  },
+  {
+   "line": 4,
+   "text": "Up to eight percent, every single decade.",
+   "start": 7.429,
+   "end": 9.739,
+   "words": [
+    {
+     "w": "Up",
+     "start": 7.429,
+     "end": 7.572
+    },
+    {
+     "w": "to",
+     "start": 7.679,
+     "end": 7.786
+    },
+    {
+     "w": "eight",
+     "start": 7.857,
+     "end": 8.0
+    },
+    {
+     "w": "percent,",
+     "start": 8.321,
+     "end": 8.615
+    },
+    {
+     "w": "every",
+     "start": 8.651,
+     "end": 8.936
+    },
+    {
+     "w": "single",
+     "start": 9.079,
+     "end": 9.222
+    },
+    {
+     "w": "decade.",
+     "start": 9.329,
+     "end": 9.739
+    }
+   ]
+  },
+  {
+   "line": 5,
+   "text": "Nobody notices at first.",
+   "start": 9.775,
+   "end": 11.053,
+   "words": [
+    {
+     "w": "Nobody",
+     "start": 9.775,
+     "end": 10.06
+    },
+    {
+     "w": "notices",
+     "start": 10.131,
+     "end": 10.417
+    },
+    {
+     "w": "at",
+     "start": 10.488,
+     "end": 10.559
+    },
+    {
+     "w": "first.",
+     "start": 10.881,
+     "end": 11.053
+    }
+   ]
+  },
+  {
+   "line": 6,
+   "text": "The shopping bags just feel a little heavier on the walk home.",
+   "start": 11.101,
+   "end": 13.717,
+   "words": [
+    {
+     "w": "The",
+     "start": 11.101,
+     "end": 11.148
+    },
+    {
+     "w": "shopping",
+     "start": 11.326,
+     "end": 11.505
+    },
+    {
+     "w": "bags",
+     "start": 11.648,
+     "end": 11.79
+    },
+    {
+     "w": "just",
+     "start": 11.862,
+     "end": 12.004
+    },
+    {
+     "w": "feel",
+     "start": 12.076,
+     "end": 12.147
+    },
+    {
+     "w": "a",
+     "start": 12.29,
+     "end": 12.325
+    },
+    {
+     "w": "little",
+     "start": 12.361,
+     "end": 12.575
+    },
+    {
+     "w": "heavier",
+     "start": 12.646,
+     "end": 12.86
+    },
+    {
+     "w": "on",
+     "start": 12.896,
+     "end": 12.932
+    },
+    {
+     "w": "the",
+     "start": 13.003,
+     "end": 13.075
+    },
+    {
+     "w": "walk",
+     "start": 13.182,
+     "end": 13.289
+    },
+    {
+     "w": "home.",
+     "start": 13.36,
+     "end": 13.717
+    }
+   ]
+  },
+  {
+   "line": 7,
+   "text": "The stairs feel a little steeper, and getting up from the sofa needs a push.",
+   "start": 13.752,
+   "end": 17.231,
+   "words": [
+    {
+     "w": "The",
+     "start": 13.752,
+     "end": 13.824
+    },
+    {
+     "w": "stairs",
+     "start": 13.895,
+     "end": 14.252
+    },
+    {
+     "w": "feel",
+     "start": 14.323,
+     "end": 14.394
+    },
+    {
+     "w": "a",
+     "start": 14.537,
+     "end": 14.608
+    },
+    {
+     "w": "little",
+     "start": 14.68,
+     "end": 14.751
+    },
+    {
+     "w": "steeper,",
+     "start": 14.823,
+     "end": 15.34
+    },
+    {
+     "w": "and",
+     "start": 15.375,
+     "end": 15.518
+    },
+    {
+     "w": "getting",
+     "start": 15.625,
+     "end": 15.732
+    },
+    {
+     "w": "up",
+     "start": 15.768,
+     "end": 15.804
+    },
+    {
+     "w": "from",
+     "start": 15.875,
+     "end": 15.946
+    },
+    {
+     "w": "the",
+     "start": 16.018,
+     "end": 16.089
+    },
+    {
+     "w": "sofa",
+     "start": 16.196,
+     "end": 16.446
+    },
+    {
+     "w": "needs",
+     "start": 16.517,
+     "end": 16.588
+    },
+    {
+     "w": "a",
+     "start": 16.731,
+     "end": 16.992
+    },
+    {
+     "w": "push.",
+     "start": 17.168,
+     "end": 17.231
+    }
+   ]
+  },
+  {
+   "line": 8,
+   "text": "Then one night, June slipped on the landing, and her legs simply weren't there to catch her.",
+   "start": 17.266,
+   "end": 21.253,
+   "words": [
+    {
+     "w": "Then",
+     "start": 17.266,
+     "end": 17.409
+    },
+    {
+     "w": "one",
+     "start": 17.48,
+     "end": 17.623
+    },
+    {
+     "w": "night,",
+     "start": 17.837,
+     "end": 18.087
+    },
+    {
+     "w": "June",
+     "start": 18.122,
+     "end": 18.336
+    },
+    {
+     "w": "slipped",
+     "start": 18.408,
+     "end": 18.622
+    },
+    {
+     "w": "on",
+     "start": 18.657,
+     "end": 18.693
+    },
+    {
+     "w": "the",
+     "start": 18.764,
+     "end": 18.836
+    },
+    {
+     "w": "landing,",
+     "start": 19.086,
+     "end": 19.359
+    },
+    {
+     "w": "and",
+     "start": 19.383,
+     "end": 19.407
+    },
+    {
+     "w": "her",
+     "start": 19.478,
+     "end": 19.621
+    },
+    {
+     "w": "legs",
+     "start": 19.763,
+     "end": 19.906
+    },
+    {
+     "w": "simply",
+     "start": 19.977,
+     "end": 20.263
+    },
+    {
+     "w": "weren't",
+     "start": 20.298,
+     "end": 20.477
+    },
+    {
+     "w": "there",
+     "start": 20.513,
+     "end": 20.548
+    },
+    {
+     "w": "to",
+     "start": 20.62,
+     "end": 20.691
+    },
+    {
+     "w": "catch",
+     "start": 20.798,
+     "end": 20.905
+    },
+    {
+     "w": "her.",
+     "start": 21.11,
+     "end": 21.253
+    }
+   ]
+  },
+  {
+   "line": 9,
+   "text": "Three weeks on the sofa, waiting for a bruised hip to heal.",
+   "start": 21.288,
+   "end": 23.937,
+   "words": [
+    {
+     "w": "Three",
+     "start": 21.288,
+     "end": 21.502
+    },
+    {
+     "w": "weeks",
+     "start": 21.609,
+     "end": 21.717
+    },
+    {
+     "w": "on",
+     "start": 21.752,
+     "end": 21.788
+    },
+    {
+     "w": "the",
+     "start": 21.859,
+     "end": 21.931
+    },
+    {
+     "w": "sofa,",
+     "start": 22.038,
+     "end": 22.597
+    },
+    {
+     "w": "waiting",
+     "start": 22.691,
+     "end": 22.787
+    },
+    {
+     "w": "for",
+     "start": 22.822,
+     "end": 22.858
+    },
+    {
+     "w": "a",
+     "start": 23.001,
+     "end": 23.048
+    },
+    {
+     "w": "bruised",
+     "start": 23.096,
+     "end": 23.286
+    },
+    {
+     "w": "hip",
+     "start": 23.358,
+     "end": 23.429
+    },
+    {
+     "w": "to",
+     "start": 23.5,
+     "end": 23.572
+    },
+    {
+     "w": "heal.",
+     "start": 23.607,
+     "end": 23.937
+    }
+   ]
+  },
+  {
+   "line": 10,
+   "text": "Her doctor wrote one prescription, and it wasn't a pill.",
+   "start": 23.973,
+   "end": 26.577,
+   "words": [
+    {
+     "w": "Her",
+     "start": 23.973,
+     "end": 24.044
+    },
+    {
+     "w": "doctor",
+     "start": 24.223,
+     "end": 24.401
+    },
+    {
+     "w": "wrote",
+     "start": 24.437,
+     "end": 24.615
+    },
+    {
+     "w": "one",
+     "start": 24.686,
+     "end": 24.829
+    },
+    {
+     "w": "prescription,",
+     "start": 24.9,
+     "end": 25.578
+    },
+    {
+     "w": "and",
+     "start": 25.614,
+     "end": 25.685
+    },
+    {
+     "w": "it",
+     "start": 25.757,
+     "end": 25.828
+    },
+    {
+     "w": "wasn't",
+     "start": 25.899,
+     "end": 26.042
+    },
+    {
+     "w": "a",
+     "start": 26.113,
+     "end": 26.149
+    },
+    {
+     "w": "pill.",
+     "start": 26.185,
+     "end": 26.577
+    }
+   ]
+  },
+  {
+   "line": 11,
+   "text": "Lift something heavy. Twice a week.",
+   "start": 26.648,
+   "end": 28.512,
+   "words": [
+    {
+     "w": "Lift",
+     "start": 26.648,
+     "end": 26.862
+    },
+    {
+     "w": "something",
+     "start": 27.041,
+     "end": 27.219
+    },
+    {
+     "w": "heavy.",
+     "start": 27.291,
+     "end": 27.701
+    },
+    {
+     "w": "Twice",
+     "start": 27.736,
+     "end": 27.951
+    },
+    {
+     "w": "a",
+     "start": 27.986,
+     "end": 28.022
+    },
+    {
+     "w": "week.",
+     "start": 28.093,
+     "end": 28.512
+    }
+   ]
+  },
+  {
+   "line": 12,
+   "text": "So June walked into a gym full of people half her age and picked up the smallest dumbbell in the room.",
+   "start": 28.548,
+   "end": 33.177,
+   "words": [
+    {
+     "w": "So",
+     "start": 28.548,
+     "end": 28.691
+    },
+    {
+     "w": "June",
+     "start": 28.762,
+     "end": 28.976
+    },
+    {
+     "w": "walked",
+     "start": 29.048,
+     "end": 29.19
+    },
+    {
+     "w": "into",
+     "start": 29.297,
+     "end": 29.404
+    },
+    {
+     "w": "a",
+     "start": 29.547,
+     "end": 29.571
+    },
+    {
+     "w": "gym",
+     "start": 29.594,
+     "end": 29.832
+    },
+    {
+     "w": "full",
+     "start": 29.904,
+     "end": 29.975
+    },
+    {
+     "w": "of",
+     "start": 30.046,
+     "end": 30.118
+    },
+    {
+     "w": "people",
+     "start": 30.26,
+     "end": 30.403
+    },
+    {
+     "w": "half",
+     "start": 30.474,
+     "end": 30.617
+    },
+    {
+     "w": "her",
+     "start": 30.689,
+     "end": 30.76
+    },
+    {
+     "w": "age",
+     "start": 30.831,
+     "end": 31.17
+    },
+    {
+     "w": "and",
+     "start": 31.241,
+     "end": 31.384
+    },
+    {
+     "w": "picked",
+     "start": 31.456,
+     "end": 31.527
+    },
+    {
+     "w": "up",
+     "start": 31.598,
+     "end": 31.67
+    },
+    {
+     "w": "the",
+     "start": 31.777,
+     "end": 31.884
+    },
+    {
+     "w": "smallest",
+     "start": 31.955,
+     "end": 32.312
+    },
+    {
+     "w": "dumbbell",
+     "start": 32.347,
+     "end": 32.597
+    },
+    {
+     "w": "in",
+     "start": 32.633,
+     "end": 32.668
+    },
+    {
+     "w": "the",
+     "start": 32.704,
+     "end": 32.74
+    },
+    {
+     "w": "room.",
+     "start": 32.811,
+     "end": 33.177
+    }
+   ]
+  },
+  {
+   "line": 13,
+   "text": "Two kilos.",
+   "start": 33.212,
+   "end": 33.988,
+   "words": [
+    {
+     "w": "Two",
+     "start": 33.212,
+     "end": 33.355
+    },
+    {
+     "w": "kilos.",
+     "start": 33.426,
+     "end": 33.988
+    }
+   ]
+  },
+  {
+   "line": 14,
+   "text": "She could barely lift it, and the young man at the rack tried very hard not to stare.",
+   "start": 34.024,
+   "end": 37.752,
+   "words": [
+    {
+     "w": "She",
+     "start": 34.024,
+     "end": 34.095
+    },
+    {
+     "w": "could",
+     "start": 34.167,
+     "end": 34.309
+    },
+    {
+     "w": "barely",
+     "start": 34.416,
+     "end": 34.666
+    },
+    {
+     "w": "lift",
+     "start": 34.773,
+     "end": 34.88
+    },
+    {
+     "w": "it,",
+     "start": 35.05,
+     "end": 35.13
+    },
+    {
+     "w": "and",
+     "start": 35.166,
+     "end": 35.237
+    },
+    {
+     "w": "the",
+     "start": 35.273,
+     "end": 35.308
+    },
+    {
+     "w": "young",
+     "start": 35.38,
+     "end": 35.522
+    },
+    {
+     "w": "man",
+     "start": 35.594,
+     "end": 35.665
+    },
+    {
+     "w": "at",
+     "start": 35.736,
+     "end": 35.808
+    },
+    {
+     "w": "the",
+     "start": 35.843,
+     "end": 35.879
+    },
+    {
+     "w": "rack",
+     "start": 35.95,
+     "end": 36.164
+    },
+    {
+     "w": "tried",
+     "start": 36.236,
+     "end": 36.521
+    },
+    {
+     "w": "very",
+     "start": 36.664,
+     "end": 36.807
+    },
+    {
+     "w": "hard",
+     "start": 36.914,
+     "end": 37.021
+    },
+    {
+     "w": "not",
+     "start": 37.092,
+     "end": 37.163
+    },
+    {
+     "w": "to",
+     "start": 37.235,
+     "end": 37.306
+    },
+    {
+     "w": "stare.",
+     "start": 37.377,
+     "end": 37.752
+    }
+   ]
+  },
+  {
+   "line": 15,
+   "text": "But muscle never stops listening.",
+   "start": 37.788,
+   "end": 39.553,
+   "words": [
+    {
+     "w": "But",
+     "start": 37.788,
+     "end": 37.93
+    },
+    {
+     "w": "muscle",
+     "start": 38.002,
+     "end": 38.43
+    },
+    {
+     "w": "never",
+     "start": 38.537,
+     "end": 38.644
+    },
+    {
+     "w": "stops",
+     "start": 38.715,
+     "end": 38.929
+    },
+    {
+     "w": "listening.",
+     "start": 39.001,
+     "end": 39.553
+    }
+   ]
+  },
+  {
+   "line": 16,
+   "text": "Week by week, it started to rebuild, the same way it does at twenty, just slower.",
+   "start": 39.589,
+   "end": 43.62,
+   "words": [
+    {
+     "w": "Week",
+     "start": 39.589,
+     "end": 39.732
+    },
+    {
+     "w": "by",
+     "start": 39.803,
+     "end": 39.946
+    },
+    {
+     "w": "week,",
+     "start": 40.017,
+     "end": 40.338
+    },
+    {
+     "w": "it",
+     "start": 40.374,
+     "end": 40.445
+    },
+    {
+     "w": "started",
+     "start": 40.517,
+     "end": 40.731
+    },
+    {
+     "w": "to",
+     "start": 40.802,
+     "end": 40.873
+    },
+    {
+     "w": "rebuild,",
+     "start": 40.98,
+     "end": 41.462
+    },
+    {
+     "w": "the",
+     "start": 41.498,
+     "end": 41.64
+    },
+    {
+     "w": "same",
+     "start": 41.747,
+     "end": 41.854
+    },
+    {
+     "w": "way",
+     "start": 41.89,
+     "end": 41.926
+    },
+    {
+     "w": "it",
+     "start": 41.997,
+     "end": 42.069
+    },
+    {
+     "w": "does",
+     "start": 42.14,
+     "end": 42.211
+    },
+    {
+     "w": "at",
+     "start": 42.283,
+     "end": 42.354
+    },
+    {
+     "w": "twenty,",
+     "start": 42.425,
+     "end": 42.88
+    },
+    {
+     "w": "just",
+     "start": 42.916,
+     "end": 43.058
+    },
+    {
+     "w": "slower.",
+     "start": 43.13,
+     "end": 43.62
+    }
+   ]
+  },
+  {
+   "line": 17,
+   "text": "Four kilos. Then six. Then eight.",
+   "start": 43.656,
+   "end": 45.895,
+   "words": [
+    {
+     "w": "Four",
+     "start": 43.656,
+     "end": 43.87
+    },
+    {
+     "w": "kilos.",
+     "start": 43.977,
+     "end": 44.512
+    },
+    {
+     "w": "Then",
+     "start": 44.548,
+     "end": 44.762
+    },
+    {
+     "w": "six.",
+     "start": 44.833,
+     "end": 45.377
+    },
+    {
+     "w": "Then",
+     "start": 45.413,
+     "end": 45.556
+    },
+    {
+     "w": "eight.",
+     "start": 45.627,
+     "end": 45.895
+    }
+   ]
+  },
+  {
+   "line": 18,
+   "text": "The young man started asking her for tips.",
+   "start": 45.93,
+   "end": 47.812,
+   "words": [
+    {
+     "w": "The",
+     "start": 45.93,
+     "end": 46.002
+    },
+    {
+     "w": "young",
+     "start": 46.109,
+     "end": 46.216
+    },
+    {
+     "w": "man",
+     "start": 46.323,
+     "end": 46.43
+    },
+    {
+     "w": "started",
+     "start": 46.501,
+     "end": 46.715
+    },
+    {
+     "w": "asking",
+     "start": 46.786,
+     "end": 47.0
+    },
+    {
+     "w": "her",
+     "start": 47.072,
+     "end": 47.143
+    },
+    {
+     "w": "for",
+     "start": 47.214,
+     "end": 47.286
+    },
+    {
+     "w": "tips.",
+     "start": 47.357,
+     "end": 47.812
+    }
+   ]
+  },
+  {
+   "line": 19,
+   "text": "The shopping bags got lighter.",
+   "start": 47.848,
+   "end": 49.203,
+   "words": [
+    {
+     "w": "The",
+     "start": 47.848,
+     "end": 47.919
+    },
+    {
+     "w": "shopping",
+     "start": 47.99,
+     "end": 48.276
+    },
+    {
+     "w": "bags",
+     "start": 48.418,
+     "end": 48.561
+    },
+    {
+     "w": "got",
+     "start": 48.633,
+     "end": 48.704
+    },
+    {
+     "w": "lighter.",
+     "start": 48.775,
+     "end": 49.203
+    }
+   ]
+  },
+  {
+   "line": 20,
+   "text": "The stairs got shorter, and she started taking them two at a time.",
+   "start": 49.239,
+   "end": 52.334,
+   "words": [
+    {
+     "w": "The",
+     "start": 49.239,
+     "end": 49.31
+    },
+    {
+     "w": "stairs",
+     "start": 49.382,
+     "end": 49.667
+    },
+    {
+     "w": "got",
+     "start": 49.774,
+     "end": 49.881
+    },
+    {
+     "w": "shorter,",
+     "start": 49.952,
+     "end": 50.428
+    },
+    {
+     "w": "and",
+     "start": 50.476,
+     "end": 50.523
+    },
+    {
+     "w": "she",
+     "start": 50.595,
+     "end": 50.666
+    },
+    {
+     "w": "started",
+     "start": 50.809,
+     "end": 50.951
+    },
+    {
+     "w": "taking",
+     "start": 51.094,
+     "end": 51.237
+    },
+    {
+     "w": "them",
+     "start": 51.344,
+     "end": 51.451
+    },
+    {
+     "w": "two",
+     "start": 51.486,
+     "end": 51.522
+    },
+    {
+     "w": "at",
+     "start": 51.593,
+     "end": 51.665
+    },
+    {
+     "w": "a",
+     "start": 51.7,
+     "end": 51.736
+    },
+    {
+     "w": "time.",
+     "start": 51.807,
+     "end": 52.334
+    }
+   ]
+  },
+  {
+   "line": 21,
+   "text": "By summer she was jogging through the park at sunset, past people half her age, walking.",
+   "start": 52.369,
+   "end": 56.793,
+   "words": [
+    {
+     "w": "By",
+     "start": 52.369,
+     "end": 52.512
+    },
+    {
+     "w": "summer",
+     "start": 52.583,
+     "end": 52.869
+    },
+    {
+     "w": "she",
+     "start": 52.94,
+     "end": 53.011
+    },
+    {
+     "w": "was",
+     "start": 53.119,
+     "end": 53.226
+    },
+    {
+     "w": "jogging",
+     "start": 53.297,
+     "end": 53.582
+    },
+    {
+     "w": "through",
+     "start": 53.654,
+     "end": 53.725
+    },
+    {
+     "w": "the",
+     "start": 53.761,
+     "end": 53.796
+    },
+    {
+     "w": "park",
+     "start": 53.868,
+     "end": 54.01
+    },
+    {
+     "w": "at",
+     "start": 54.082,
+     "end": 54.153
+    },
+    {
+     "w": "sunset,",
+     "start": 54.224,
+     "end": 54.751
+    },
+    {
+     "w": "past",
+     "start": 54.786,
+     "end": 55.0
+    },
+    {
+     "w": "people",
+     "start": 55.072,
+     "end": 55.357
+    },
+    {
+     "w": "half",
+     "start": 55.428,
+     "end": 55.571
+    },
+    {
+     "w": "her",
+     "start": 55.642,
+     "end": 55.714
+    },
+    {
+     "w": "age,",
+     "start": 55.856,
+     "end": 56.249
+    },
+    {
+     "w": "walking.",
+     "start": 56.285,
+     "end": 56.793
+    }
+   ]
+  },
+  {
+   "line": 22,
+   "text": "And the jar of pickles?",
+   "start": 56.829,
+   "end": 57.89,
+   "words": [
+    {
+     "w": "And",
+     "start": 56.829,
+     "end": 56.9
+    },
+    {
+     "w": "the",
+     "start": 56.936,
+     "end": 56.971
+    },
+    {
+     "w": "jar",
+     "start": 57.043,
+     "end": 57.114
+    },
+    {
+     "w": "of",
+     "start": 57.185,
+     "end": 57.257
+    },
+    {
+     "w": "pickles?",
+     "start": 57.364,
+     "end": 57.89
+    }
+   ]
+  },
+  {
+   "line": 23,
+   "text": "Her son, thirty-five, couldn't open it.",
+   "start": 57.961,
+   "end": 60.075,
+   "words": [
+    {
+     "w": "Her",
+     "start": 57.961,
+     "end": 58.033
+    },
+    {
+     "w": "son,",
+     "start": 58.282,
+     "end": 58.568
+    },
+    {
+     "w": "thirty-five,",
+     "start": 58.603,
+     "end": 59.346
+    },
+    {
+     "w": "couldn't",
+     "start": 59.394,
+     "end": 59.513
+    },
+    {
+     "w": "open",
+     "start": 59.584,
+     "end": 59.798
+    },
+    {
+     "w": "it.",
+     "start": 59.932,
+     "end": 60.075
+    }
+   ]
+  },
+  {
+   "line": 24,
+   "text": "June did. First try.",
+   "start": 60.111,
+   "end": 61.671,
+   "words": [
+    {
+     "w": "June",
+     "start": 60.111,
+     "end": 60.325
+    },
+    {
+     "w": "did.",
+     "start": 60.396,
+     "end": 60.815
+    },
+    {
+     "w": "First",
+     "start": 60.922,
+     "end": 61.029
+    },
+    {
+     "w": "try.",
+     "start": 61.101,
+     "end": 61.671
+    }
+   ]
+  }
+ ],
+ "fit": {
+  "pauses_cut": 35,
+  "cut_s": 9.33,
+  "atempo": 1.1213
+ }
+}

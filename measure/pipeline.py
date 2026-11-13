@@ -1,12 +1,93 @@
 """Frame-accurate reference measurement (make-short/measure).  Usage:  python3 -I pipeline.py <step> <video_dir> [args]
-Folder layout: <dir>/video.mp4, <dir>/frames/f_00001.jpg (= frame 0) ...
-Steps (in order): measure, small, sheets, capband, captions, [agent writes caption_cards.csv + annotations.json],
+Folder layout: <dir>/source.<ext> (the download, any size or frame rate), <dir>/video.mp4 (720x1280, 30 fps, made by prep),
+<dir>/frames/f_00001.jpg (= frame 0) ...
+Steps (in order): prep [file], measure, small, sheets, capband, captions, [agent writes caption_cards.csv + annotations.json],
 capbox, capstyle, assemble, contact.   Helpers: strip <a> <b> [name], blendfit <a> <b>, grid <name> <a:b:step>...
 """
 import sys, os, json, subprocess, collections
 import numpy as np, pandas as pd, cv2
 
 W, H, FPS = 720, 1280, 30
+
+
+SOURCE_EXTS = ('.mp4', '.mov', '.m4v', '.webm', '.mkv')
+
+
+def _probe(path):
+    out = subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries',
+                          'stream=width,height,r_frame_rate,avg_frame_rate,nb_frames:format=duration',
+                          '-of', 'json', path], capture_output=True, text=True, check=True).stdout
+    j = json.loads(out); s = j['streams'][0]
+    rate = lambda r: (lambda a, b: float(a) / float(b) if float(b) else 0.0)(*r.split('/'))
+    return dict(width=int(s['width']), height=int(s['height']), r_fps=rate(s['r_frame_rate']), avg_fps=rate(s['avg_frame_rate']),
+                nb_frames=int(s.get('nb_frames') or 0), duration=float(j.get('format', {}).get('duration') or 0))
+
+
+def _need_prep(d):
+    """Every step reads <dir>/video.mp4 as 720x1280 at exactly 30 fps. Stop with a clear message if prep was skipped."""
+    v = f'{d}/video.mp4'
+    if not os.path.exists(v):
+        raise SystemExit(f'{d}: no video.mp4. Put the reference in the folder (any name, any frame rate) and run: pipeline.py prep {d}')
+    p = _probe(v)
+    if (p['width'], p['height']) != (W, H) or abs(p['r_fps'] - FPS) > 0.01 or abs(p['avg_fps'] - FPS) > 0.05:
+        raise SystemExit(f"{d}/video.mp4 is {p['width']}x{p['height']} at {p['avg_fps']:.3f} fps. Run: pipeline.py prep {d} "
+                         f"(it keeps the original and writes a {W}x{H}, {FPS} fps video.mp4)")
+
+
+# ------------------------------------------------------------------ prep: any reference -> 720x1280 at 30 fps
+def prep(d, src=None):
+    """Normalise one reference to the format every other step expects, then extract every frame.
+    Instagram / TikTok / YouTube downloads come at 24, 25, 30, 50 or 60 fps and 720 or 1080 wide; all measuring is done at 30 fps.
+    The original stays in the folder (an old video.mp4 is renamed source.mp4); source_meta.json records its real size and frame rate."""
+    os.makedirs(d, exist_ok=True)
+    if src is None:
+        found = sorted(f for f in os.listdir(d) if f.lower().endswith(SOURCE_EXTS) and f != 'video.mp4' and not f.startswith('.'))
+        src_name = next((f for f in found if f.startswith('source.')), found[0] if found else None)
+        if src_name is None and os.path.exists(f'{d}/video.mp4'):
+            src_name = 'source.mp4'; os.rename(f'{d}/video.mp4', f'{d}/source.mp4')
+        if src_name is None:
+            raise SystemExit(f'{d}: no video found. Put the downloaded reference (.mp4/.mov/.webm) in this folder first.')
+        src = f'{d}/{src_name}'
+    else:
+        ext = os.path.splitext(src)[1].lower() or '.mp4'
+        dst = f'{d}/source{ext}'
+        if os.path.abspath(src) != os.path.abspath(dst):
+            subprocess.run(['cp', src, dst], check=True)
+        src = dst
+    meta = _probe(src); meta['source'] = os.path.basename(src)
+    fps = meta['avg_fps'] or meta['r_fps']
+    vf = (f'fps={FPS},scale={W}:{H}:force_original_aspect_ratio=decrease:flags=lanczos:out_color_matrix=bt709,'
+          f'pad={W}:{H}:(ow-iw)/2:(oh-ih)/2:black,setsar=1,format=yuv420p')
+    subprocess.run(['ffmpeg', '-y', '-v', 'error', '-i', src, '-vf', vf, '-r', str(FPS), '-fps_mode', 'cfr',
+                    '-c:v', 'libx264', '-preset', 'slow', '-crf', '12',
+                    '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-color_range', 'tv',
+                    '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', f'{d}/video.mp4'], check=True)
+    fr = f'{d}/frames'
+    if os.path.isdir(fr):
+        for f in os.listdir(fr):
+            if f.endswith('.jpg'): os.remove(os.path.join(fr, f))
+    os.makedirs(fr, exist_ok=True)
+    subprocess.run(['ffmpeg', '-y', '-v', 'error', '-i', f'{d}/video.mp4', '-fps_mode', 'passthrough', '-q:v', '3',
+                    f'{fr}/f_%05d.jpg'], check=True)
+    out = _probe(f'{d}/video.mp4'); n = nframes(d)
+    meta.update(measured_fps=FPS, measured_size=[W, H], measured_frames=n, measured_duration=n / FPS)
+    note = ''
+    if abs(fps - FPS) > 0.05:
+        if fps < FPS:
+            note = (f'{fps:g} fps source: ffmpeg repeats about {FPS - fps:.0f} frames a second to reach {FPS} fps, '
+                    f'so evenly spaced zero-difference frames are repeats, not holds.')
+        else:
+            note = (f'{fps:g} fps source: ffmpeg keeps {FPS} of every {fps:g} frames, so a dissolve or flash shorter than '
+                    f'{1000 / FPS:.0f} ms can lose a frame. Check short transitions in source.* if they matter.')
+    if abs(meta['width'] / meta['height'] - W / H) > 0.01:
+        note += (f" Not 9:16 ({meta['width']}x{meta['height']}): prep added black bars, which raise pct_black and lower luma_mean; "
+                 f"crop them out of colour numbers or use a 9:16 download.")
+    meta['note'] = note.strip()
+    json.dump(meta, open(f'{d}/source_meta.json', 'w'), indent=1)
+    if (out['width'], out['height']) != (W, H) or abs(out['avg_fps'] - FPS) > 0.05:
+        raise SystemExit(f'prep failed: video.mp4 is {out}')
+    print(f"{d}: {meta['source']} {meta['width']}x{meta['height']} at {fps:.3f} fps -> video.mp4 {W}x{H} at {FPS} fps, "
+          f"{n} frames ({n / FPS:.2f} s). {meta['note']}".rstrip())
 
 
 def nframes(d):
@@ -19,7 +100,8 @@ def frame_path(d, i):
 
 # ------------------------------------------------------------------ measure
 def measure(d):
-    cmd = ['ffmpeg', '-v', 'error', '-i', f'{d}/video.mp4', '-vf',
+    _need_prep(d)
+    cmd =['ffmpeg', '-v', 'error', '-i', f'{d}/video.mp4', '-vf',
            'scale=in_color_matrix=bt709:in_range=tv:out_range=pc:flags=neighbor+full_chroma_int,format=rgb24',
            '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-']
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
@@ -58,7 +140,8 @@ def measure(d):
 
 # ------------------------------------------------------------------ small frames + diffs
 def small(d):
-    cmd = ['ffmpeg', '-v', 'error', '-i', f'{d}/video.mp4', '-vf', 'scale=90:160:flags=area,format=bgr24', '-f', 'rawvideo', '-']
+    _need_prep(d)
+    cmd =['ffmpeg', '-v', 'error', '-i', f'{d}/video.mp4', '-vf', 'scale=90:160:flags=area,format=bgr24', '-f', 'rawvideo', '-']
     raw = subprocess.run(cmd, capture_output=True).stdout
     sm = np.frombuffer(raw, np.uint8).reshape(-1, 160, 90, 3)
     N = len(sm)
@@ -409,7 +492,8 @@ def assemble(d):
 if __name__ == '__main__':
     step, d = sys.argv[1], sys.argv[2].rstrip('/')
     rest = sys.argv[3:]
-    if step == 'measure': measure(d)
+    if step == 'prep': prep(d, rest[0] if rest else None)
+    elif step == 'measure': measure(d)
     elif step == 'small': small(d)
     elif step == 'sheets': sheets(d)
     elif step == 'capband': capband(d)

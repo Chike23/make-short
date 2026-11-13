@@ -3,9 +3,11 @@
 //   defaults: ../out/short-v3-silent.mp4, voice/voice.mp3, voice/voice-timing.json (take.mjs output or your own recording, see SKILL.md)
 //   sound cues come from voice/cues.json: {"cues":[[sfx,line,wordStem,offsetS]],"impact":{sfx:frame},"hits":[[sfx,frame,vol]],"capUp":[[f0,f1]]}
 import fs from 'node:fs'; import path from 'node:path'; import { execFileSync } from 'node:child_process';
+import { buildExplainerAss, overlays, FONTS_DIR } from './captions-explainer.mjs';
 const here = path.dirname(new URL(import.meta.url).pathname.replace(/^\/(\w:)/, '$1'));
 const root = path.join(here, '..');
 const silent = process.argv[2] || path.join(root, 'out', 'short-v3-silent.mp4');
+const VID_DUR = Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', silent], { encoding: 'utf8' }).trim());
 const T = JSON.parse(fs.readFileSync(path.resolve(process.argv[4] || path.join(here, 'voice-timing.json')), 'utf8').replace(/^\uFEFF/, ''));
 const words = T.lines.flatMap(l => l.words.map(w => ({ ...w, line: l.line })));
 
@@ -34,7 +36,14 @@ if (fs.existsSync(shotsFile)) for (const s of JSON.parse(fs.readFileSync(shotsFi
 //    and never crosses punctuation; cards hold until the next card (a caption on every frame)
 // Arial Black at 108 has a 54-55 px cap height in libass. CAP_Y = the \pos y of the text box bottom (baseline + descender);
 // after a render, `python audit.py` measures the real cap top/baseline: move CAP_Y by (1376 - measured baseline).
-const CAP_Y = CF.captionY ?? 1400;
+// Font: Arial Black (macOS/Windows system font). Where it is missing (Linux), libass would silently fall back to a thin
+// font, so use Inter Black at 84 placed 7 px higher (audit.py: cap height 54, baseline 1376, as Arial Black 108 at 1400).
+// cues.json captionFont / captionSize / captionY win.
+const hasFont = f => { try { return execFileSync('fc-list', [':family'], { encoding: 'utf8' }).includes(f); } catch { return true; } };
+const CAP_FONT = CF.captionFont ?? (hasFont('Arial Black') ? 'Arial Black' : 'Inter Black');
+const CAP_SIZE = CF.captionSize ?? (CAP_FONT === 'Arial Black' ? 108 : 84);
+const CAP_Y = CF.captionY ?? (CAP_FONT === 'Arial Black' ? 1400 : 1393);
+if (!CF.captionFont && CAP_FONT !== 'Arial Black') console.log(`captions: Arial Black not installed here, using ${CAP_FONT} ${CAP_SIZE}`);
 const ONE_WORD = CF.oneWordShare ?? 0.75;
 const ts = s => { const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, x = (s % 60).toFixed(2).padStart(5, '0'); return `${h}:${String(m).padStart(2, '0')}:${x}`; };
 const clean = w => w.replace(/["“”]/g, '');
@@ -66,15 +75,20 @@ for (let i = 0; i < words.length; i++) {
 const CAP_UP = CF.capUp || [];
 const ev = [];
 groups.forEach((w, i) => {
-  const end = groups[i + 1]?.start ?? Math.min(w.end + 0.4, T.duration + 0.4);   // hold until the next card: no gaps
+  const end = groups[i + 1]?.start ?? Math.max(w.end + 0.4, VID_DUR);   // hold until the next card; the last one holds to the end of the picture
   const y = CAP_UP.some(([a, b]) => w.start * 30 >= a && w.start * 30 < b) ? CAP_Y - 620 : CAP_Y;
   const pos = `\\an2\\pos(540,${y})`;
   ev.push(`Dialogue: 0,${ts(w.start)},${ts(end)},S,,0,0,0,,{${pos}\\blur5}${w.text}`);   // soft shadow layer
   ev.push(`Dialogue: 1,${ts(w.start)},${ts(end)},W,,0,0,0,,{${pos}}${w.text}`);           // the caption
 });
-const ass = `[Script Info]\nScriptType: v4.00+\nPlayResX: 1080\nPlayResY: 1920\nWrapStyle: 2\n\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n` +
-  `Style: W,Arial Black,108,&H00F9F9F9,&H00F9F9F9,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,5,0,2,60,60,0,1\n` +
-  `Style: S,Arial Black,108,&H50000000,&H50000000,&H50000000,&H00000000,0,0,0,0,100,100,0,0,1,10,0,2,60,60,0,1\n\n` +
+// "captionStyle": "explainer" in cues.json = the anatomy-explainer look (top phrase cards, key-word box, callouts): captions-explainer.mjs
+const EXPLAINER = CF.captionStyle === 'explainer';
+// callouts ("overlays" in cues.json: stat, counter, note, tag) work in both looks, always with a black outline
+if (!EXPLAINER) ev.push(...overlays(CF.overlays, words, { white: 'F9F9F9', outline: 5, ...(CF.callouts || {}) }));
+const ass = EXPLAINER ? buildExplainerAss(words, T, CF) : `[Script Info]\nScriptType: v4.00+\nPlayResX: 1080\nPlayResY: 1920\nWrapStyle: 2\nScaledBorderAndShadow: yes\n\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n` +
+  `Style: W,${CAP_FONT},${CAP_SIZE},&H00F9F9F9,&H00F9F9F9,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,5,0,2,60,60,0,1\n` +
+  `Style: S,${CAP_FONT},${CAP_SIZE},&H50000000,&H50000000,&H50000000,&H00000000,0,0,0,0,100,100,0,0,1,10,0,2,60,60,0,1\n` +
+  `Style: X,Inter,80,&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,5,0,0,0,1\n\n` +
   `[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n${ev.join('\n')}\n`;
 fs.writeFileSync(path.join(here, 'captions.ass'), ass);
 
@@ -83,8 +97,9 @@ const dst = path.join(out, 'short-v3-final.mp4');
 const inputs = ['-i', silent, '-i', path.resolve(process.argv[3] || path.join(here, 'voice.mp3')), '-i', path.join(here, 'sfx', 'music.mp3'), ...sfx.flatMap(s => ['-i', path.join(here, 'sfx', `${s.n}.mp3`)])];
 const sfxChains = sfx.map((s, i) => `[${i + 3}:a]volume=${s.v ?? 0.55},adelay=${Math.round(s.t * 1000)}|${Math.round(s.t * 1000)}[s${i}]`);
 const subs = path.join(here, 'captions.ass').replace(/\\/g, '/').replace(/:/g, '\\:');
+const esc = p => p.replace(/\\/g, '/').replace(/:/g, '\\:');
 const fc = [
-  `[0:v]subtitles='${subs}'[v]`, // libass can't read the woff2 fonts dir; Arial Black is a system font
+  `[0:v]subtitles='${subs}':fontsdir='${esc(FONTS_DIR)}'[v]`,   // Inter (callouts, explainer) ships in voice/fonts; Arial Black / Inter Black are system fonts
   `[1:a]asplit=2[vo][key]`,
   `[2:a]volume=0.30,afade=t=out:st=${(T.duration).toFixed(2)}:d=1.0[mu]`,
   `[mu][key]sidechaincompress=threshold=0.03:ratio=6:attack=20:release=350[duck]`,
@@ -93,4 +108,5 @@ const fc = [
 ].join(';');
 execFileSync('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', ...inputs, '-filter_complex', fc, '-map', '[v]', '-map', '[a]',
   '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', dst], { stdio: 'inherit' });
-console.log(`wrote ${dst}  (${sfx.length} sfx, ${groups.length} captions from ${words.length} words, ${Math.round(100 * groups.filter(g => !g.text.includes(' ')).length / groups.length)}% one-word)`);
+console.log(EXPLAINER ? `wrote ${dst}  (${sfx.length} sfx, explainer captions from ${words.length} words, ${(CF.overlays || []).length} callouts)`
+  : `wrote ${dst}  (${sfx.length} sfx, ${groups.length} captions from ${words.length} words, ${Math.round(100 * groups.filter(g => !g.text.includes(' ')).length / groups.length)}% one-word)`);

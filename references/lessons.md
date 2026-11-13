@@ -1,6 +1,6 @@
-# Lessons: v3 bean-world Short (append after every round)
+# Lessons (append after every film)
 
-Each lesson records what we learned and how it changes the next build. Every agent reads this first.
+Each lesson records what we learned and how it changes the next build. Lessons 1–62 come from the older bean-world route (`legacy/`). The measurement lessons (51–62) still hold, because they are where `spec.md`'s numbers come from. Lessons 63 and on are for the cut-out route this skill uses now.
 
 ## Look and grade
 1. **Passing the numbers doesn't mean it looks right.** The gate passed 37/37 while the night insert was a magenta wash with a blue can. Always LOOK at the stills next to the reference; the numbers only catch drift.
@@ -98,3 +98,32 @@ Each lesson records what we learned and how it changes the next build. Every age
 60. **Audit the render against the measurement in one run:** `python3 audit.py` (`python audit.py` on Windows). It checks the edit, size mix, camera motion, colour per mood, caption position and caption timing. All four reference videos pass it.
 61. **Lesson 33 confirmed:** the cap height is 54 px at 1080, and the caption geometry is identical to the pixel across all four videos.
 62. **About one location change in five has no cut.** The camera flies from one place to the next (R4 does it 6 times). In this engine a shot cannot cross sets (they sit 300 m apart), so build the two places as areas of ONE set with the camera path between them. Mark the key where the new place takes over with `loc`, so `audit.py` counts it.
+
+## The cut-out route: the 60 s "June and the jar" trial (Nov 2026)
+63. **Judge the whole film once, at preview quality, not shot by shot.** Five rounds of partial test renders took an evening. Every judging round costs about 15 minutes however many shots it covers. The faster loop:
+    1. build and check every shot (minutes);
+    2. one whole-film preview (about 30 min);
+    3. one judge pass;
+    4. fix everything;
+    5. one final render;
+    6. a verifier, with fixes that need no re-render.
+64. **Problems found after the final render cost a full-quality re-render.** The camera was pressed against the back of the doctor's laptop for 20 frames, and the night came out pure electric blue. Both were already in the preview, and nobody looked for them. Now `checks.py` catches the first before rendering ("lens against"), and `color_check.py` the second.
+65. **The camera needs a grammar, not a spline through every key.** A smooth curve through every framing kept the camera moving at 6 px/frame (twice the reference) and turned close keys into whips at 90–110 px/frame. The grammar:
+    - each key is a framing the camera LANDS on;
+    - an eased move into it, long enough to stay under about 34 px/frame;
+    - then a slow drift the same way (about 1.5–2 px/frame) until the next move.
+    On the same keys this gave a median of 3.3 px/frame, 5% still and 30% fast frames.
+66. **Plan the shot sizes before writing camera keys.** The trial landed on MS for 46–50% of its screen time (the reference: 13%), and on EWS + WS for 13% (the reference: 36%). Size by screen time is now counted from the keys before rendering (`plan_check.py`). House rule: wides at least 25%, MS at most 20%. Open every new place wide.
+67. **Show every reaction on screen at its word.** June's "it wasn't a pill?!" take was outside the frame. A two-shot key on the reaction word fixed it.
+68. **Props beside the face, never over it.** The doctor's note covered her face; it moved to her shoulder.
+69. **Night: saturation at most about 1.0 in the mood.** sat 1.54 clipped the walls to pure blue (luma 14%, HSV saturation 93%). With sat 0.9, gain (0.72, 0.75, 0.9) and a +40% saturation post-grade, it landed in the measured night band (YAVG 83, SATAVG 42).
+70. **Post-grade instead of re-render.** Per-shot ffmpeg curves and hue fixes (`grade_fix.py`) moved 8 shots into their bands in minutes. Carry each one back into the set's mood afterwards.
+71. **Every piece of text gets a black outline, in-world labels too** (house rule). The dumbbell weights and the prescription had none. `sets_lib.text` now draws an outline twin by default, and the checks fail any text without one.
+72. **Callouts go on top of the picture, so check them against faces.** The "2×" sat on the doctor's head and the "8%" on June's hair, until the callouts moved lower.
+73. **The clipping check needs filters,** or it drowns in false alarms:
+    - skip big flat objects (floors, ground scatter);
+    - skip feet resting in a surface;
+    - skip "depths" deeper than the object is thick (open meshes);
+    - skip the shadow-caster copies.
+    Allow deliberate overlaps per shot (`FILM['allow']`).
+74. **Never edit a file a running render reads.** A copy into a folder in use failed mid-chain. `chain.py` now freezes the code in `_code/`.

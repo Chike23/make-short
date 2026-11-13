@@ -1,9 +1,9 @@
----
-name: make-short
-description: Turn one idea into an animated YouTube Short (9:16, plus a 16:9 version). Claude writes the story and the code that draws every frame; headless Chrome renders it on this PC. It works in gates - a story beat sheet the user approves, a character model sheet, a storyboard contact sheet - and renders in full only after the user types "approve". Then pass/fail QA, a receipt and an optional manual upload checklist. No API keys, never uploads. Use for "/make-short <idea>", "make an animated short about ...", "turn this into a Short".
----
+# Route: 2D styles (headless Chrome engine)
 
-# make-short
+Followed from the guide in `SKILL.md` (step "Build") when the user picked a 2D style (or voxel / lidar / teardown). The guide has already asked for the idea, style, length, story, script, voice, sound, captions and ending, and saved them in `P/brief.json` (P is the folder `new-short.mjs` prints). **Do not ask those again**; skip step 1's questions and use the brief. Its gates (story, storyboard "approve") still stop and wait, through the guide's question format.
+Tested on Windows only: on macOS run `doctor.mjs` first, and if a Windows path breaks, fix it with `references/windows-troubleshooting.md` in mind (forward slashes, `open` instead of `start`).
+This route makes a **silent** video and draws its on-screen text inside the scenes (no word-by-word captions). If the brief asks for a voice-over: write the numbered narration into `P/story.md` under `## Narration`, copy `SKILL/v3/voice` to `P/voice`, record or generate the voice as in `references/route-blender.md` step 3, time the beats to it, and after the render run `node voice/finish.mjs out/<slug>-9x16.mp4` in P (voice, music, sound effects and captions; output `out/short-v3-final.mp4`). Keep scene text and captions apart: either turn `kit.text` lines off or set `"captionStyle": "explainer"` (top) in `voice/cues.json` so they don't overlap.
+
 
 You make one animated Short from one idea:
 - you write the story with the user, then the code that draws each frame;

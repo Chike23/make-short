@@ -1,8 +1,8 @@
 """audit.py: check a finished Short against the measured reference style (references/reference-style.md).
 
-    python audit.py [final.mp4]        run in the project folder P; default out/short-v3-final.mp4
+    python audit.py [final.mp4]        run in the project folder P; default out/short-final.mp4
 
-Reads shots.json (the edit), voice/voice-timing.json (narration), voice/captions.ass (captions) and the final video.
+Reads shots.json (the edit; explainer projects: explainer/shots.json), voice/voice-timing.json (narration), voice/captions.ass (captions) and the final video.
 Prints one PASS / FAIL / INFO line per parameter, with the reference target and range, and writes critic/audit.md.
 A FAIL here is a measured gap, not taste: give the critic this file with the render (rubric items 8 and 9).
 Needs: ffmpeg, python packages numpy + opencv-python.
@@ -11,10 +11,10 @@ import json, os, re, subprocess, sys
 import numpy as np
 import cv2
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-VIDEO = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, 'out', 'short-v3-final.mp4')
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))     # P: this file lives in P/tools
+VIDEO = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, 'out', 'short-final.mp4')
 if not os.path.exists(VIDEO) and len(sys.argv) == 1:      # no mix yet: audit the silent render (captions are then reported missing)
-    VIDEO = os.path.join(HERE, 'out', 'short-v3-silent.mp4')
+    VIDEO = os.path.join(HERE, 'out', 'short-silent.mp4')
 if not os.path.exists(VIDEO):
     sys.exit(f'audit.py: no video at {VIDEO}. Render (go.sh) and mix (voice/finish.mjs) first, or pass the mp4 path.')
 FPS = 30
@@ -52,8 +52,22 @@ TO_ENGINE = {'EWS': 'XW', 'WS': 'WIDE', 'FS': 'MED', 'MS': 'MED', 'MCU': 'CU', '
 BAND = {  # signalstats on 1080x1920 RGB frames: YAVG p10..p90, SATAVG p10..p90 of reference frames per mood
     'day': (99, 146, 22, 44), 'dusk': (114, 153, 18, 35), 'interior': (67, 139, 19, 35), 'night': (69, 118, 29, 61)}
 
+# per-style targets: critic/targets.json overrides the numbers above for a style measured from other references
+# (written from references/styles/<style>.md). {"ref": {key: [target, low, high]}, "size_share": {...}, "band": {mood: [ylo, yhi, slo, shi]},
+#  "skip": ["caption_geometry", "caption_cards", <any REF key>]}: skipped checks print as INFO. Missing file = the bean-world reference above.
+SKIP = set()
+_TGT = os.path.join(HERE, 'critic', 'targets.json')
+if os.path.exists(_TGT):
+    _t = json.load(open(_TGT, encoding='utf-8-sig'))
+    REF.update({k: tuple(v) for k, v in _t.get('ref', {}).items()})
+    SIZE_SHARE.update({k: tuple(v) for k, v in _t.get('size_share', {}).items()})
+    BAND.update({k: tuple(v) for k, v in _t.get('band', {}).items()})
+    SKIP = set(_t.get('skip', []))
+
 rows = []
 def check(name, val, key=None, rng=None, unit='', info=False, fmt='{:.2f}'):
+    if key and key in SKIP:                               # not measured for this style (critic/targets.json "skip")
+        rows.append(('INFO', name, fmt.format(val) + unit, 'not measured for this style')); return
     t, lo, hi = REF[key] if key else rng
     tol = max(0.03 * abs(t), 0.1 * (hi - lo))        # sampling noise: frames are subsampled and resized for speed
     ok = lo - tol <= val <= hi + tol
@@ -62,7 +76,35 @@ def check(name, val, key=None, rng=None, unit='', info=False, fmt='{:.2f}'):
 
 
 # ---------------------------------------------------------------- edit (shots.json)
-shots = json.load(open(os.path.join(HERE, 'shots.json')))
+def explainer_shots(path):
+    """explainer/shots.json (compose.py) -> the same [{f_in, f_out, transition_in, size, set, mood}] list.
+    "at" is seconds or "line:wordStem"; crossfade/fade/dip count as dissolves, push_up/push_down as pushes."""
+    spec = json.load(open(path, encoding='utf-8-sig'))
+    words, vend = [], None
+    tp = os.path.join(HERE, 'voice', 'voice-timing.json')
+    if os.path.exists(tp):
+        t = json.load(open(tp, encoding='utf-8-sig'))
+        words = [dict(w, line=l['line']) for l in t['lines'] for w in l['words']]; vend = t.get('duration')
+    def when(x):
+        if isinstance(x, (int, float)): return float(x)
+        line, stem = str(x).split(':', 1)
+        for w in words:
+            bare = ''.join(c for c in w['w'] if c.isalnum() or c == "'").lower()
+            if w['line'] == int(line) and bare.startswith(stem.lower()): return float(w['start'])
+        sys.exit(f'audit.py: "{x}" not found in voice/voice-timing.json')
+    raw = spec['shots']; t0 = [when(s.get('at', 0)) for s in raw]
+    dur = float(spec.get('duration') or ((vend + 0.6) if vend else t0[-1] + 3.0))
+    kind = {'crossfade': 'dissolve', 'fade': 'dissolve', 'dip': 'dissolve', 'push_up': 'push', 'push_down': 'push', 'cut': 'cut'}
+    out = []
+    for i, s in enumerate(raw):
+        f_in = int(round(t0[i] * FPS)); f_out = int(round((t0[i + 1] if i + 1 < len(raw) else dur) * FPS))
+        out.append({'id': s.get('id', f's{i + 1:02d}'), 'f_in': f_in, 'f_out': f_out,
+                    'transition_in': kind.get(s.get('transition_in', 'cut'), s.get('transition_in', 'cut')),
+                    'size': s.get('size'), 'set': s.get('loc', s.get('set', 'main')), 'mood': s.get('mood', 'interior')})
+    return out
+
+EXPLAINER = not os.path.exists(os.path.join(HERE, 'shots.json')) and os.path.exists(os.path.join(HERE, 'explainer', 'shots.json'))
+shots = explainer_shots(os.path.join(HERE, 'explainer', 'shots.json')) if EXPLAINER else json.load(open(os.path.join(HERE, 'shots.json')))
 N = max(s['f_out'] for s in shots)
 dur = N / FPS
 picture = [s for s in shots[1:] if s.get('transition_in', 'cut') != 'travel']          # travel = same camera move, no picture change
@@ -75,11 +117,14 @@ kinds = [s.get('transition_in', 'cut') for s in picture]
 if kinds:
     check('Dissolve share of transitions', 100 * sum(k == 'dissolve' for k in kinds) / len(kinds), 'dissolve_share', unit='%', fmt='{:.0f}')
 check('Whip transitions', sum(k == 'whip' for k in kinds), 'whips', fmt='{:.0f}')
-cross = os.path.isdir(os.path.join(HERE, 'render', 'pre_dissolve'))     # dissolve.py ran on the last render
-rendered = os.path.isdir(os.path.join(HERE, 'render'))
-rows.append(('INFO' if not rendered else 'PASS' if cross or 'dissolve' not in kinds else 'FAIL', 'Dissolves rendered as crossfades',
-             'yes' if cross else 'no (dip to ink)' if rendered else 'no render/ folder',
-             '8-frame crossfade, no dip (DISSOLVE=cross bash go.sh)'))
+if EXPLAINER:     # compose.py draws every transition itself (crossfade 3f, fade 8f, push 4f, dip 6f)
+    rows.append(('INFO', 'Transitions drawn by compose.py', ', '.join(sorted(set(kinds))) or 'none', 'crossfades and pushes, see the style file'))
+else:
+    cross = os.path.isdir(os.path.join(HERE, 'render', 'pre_dissolve'))     # dissolve.py ran on the last render
+    rendered = os.path.isdir(os.path.join(HERE, 'render'))
+    rows.append(('INFO' if not rendered else 'PASS' if cross or 'dissolve' not in kinds else 'FAIL', 'Dissolves rendered as crossfades',
+                 'yes' if cross else 'no (dip to ink)' if rendered else 'no render/ folder',
+                 '8-frame crossfade, no dip (DISSOLVE=cross bash go.sh)'))
 
 # shot size per frame: shot size, overridden by camera keys that carry "size" (held until the next key)
 size = [None] * N
@@ -104,6 +149,8 @@ if fine:   # keys use the 7-step reference scale: count on it before mapping to 
 else:
     check('Shot-size changes per second (engine sizes)', changes / dur, 'size_changes_ps_engine')
 for z, (t, lo, hi) in SIZE_SHARE.items():
+    if 'size_share' in SKIP or all(x is None for x in size):   # not measured for this style, or no sizes in the shot list
+        rows.append(('INFO', f'Time in {z}', f'{100 * sum(1 for x in size if x == z) / N:.1f}%', 'not measured for this style')); continue
     check(f'Time in {z}', 100 * sum(1 for x in size if x == z) / N, rng=(t, lo, hi), unit='%', fmt='{:.1f}')
 loc = [None] * N     # location per frame: the shot's set, or a camera key's "loc" when the camera travels to another place
 for s in shots:
@@ -183,6 +230,9 @@ for m, v in vals.items():
     check(f'{m}: SATAVG (signalstats, median)', s_, rng=((slo + shi) / 2, slo, shi), fmt='{:.0f}')
 
 # caption geometry: glyphs = near-white pixels next to a black outline, in the band around 70% of the height
+if 'caption_geometry' in SKIP:
+    rows.append(('INFO', 'Caption geometry', 'not checked (critic/targets.json "skip")', 'check the gate stills by eye'))
+    BANDS = []
 tops, bases, cxs, hs = [], [], [], []
 for band in BANDS:
     band = band.astype(np.int16)
@@ -205,7 +255,7 @@ if tops:
     check('Caption baseline (px at 1080x1920)', base, 'cap_base', fmt='{:.0f}')
     check('Caption cap height (px at 1080x1920)', base - top, 'cap_h', fmt='{:.0f}')
     check('Caption centre x (px at 1080x1920)', float(np.median(cxs)), 'cap_cx', fmt='{:.0f}')
-else:
+elif 'caption_geometry' not in SKIP:
     rows.append(('FAIL', 'Captions', 'none found near 70% of the height', 'every frame has a caption'))
 
 # ---------------------------------------------------------------- captions + narration (captions.ass, voice-timing.json)
@@ -213,7 +263,7 @@ ass = os.path.join(HERE, 'voice', 'captions.ass')
 tm = os.path.join(HERE, 'voice', 'voice-timing.json')
 def secs(t):
     h, m, s = t.split(':'); return int(h) * 3600 + int(m) * 60 + float(s)
-if os.path.exists(ass):
+if os.path.exists(ass) and 'caption_cards' not in SKIP:
     ev = []
     for line in open(ass, encoding='utf-8-sig'):
         if not line.startswith('Dialogue:'): continue
