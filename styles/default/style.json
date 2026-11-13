@@ -1,0 +1,7 @@
+{
+ "name": "default",
+ "description": "The house look, from the June and the jar example: 2D cut-out characters (lady2d) with soft cel shading in smoothly lit, painted 3D sets; one strong warm key with cast shadows, cool fill, haze, shallow depth of field; the reference grade (indigo shadows, red push). An empty card: every value is the kit's own default.",
+ "character": {},
+ "world": {},
+ "grade": {}
+}

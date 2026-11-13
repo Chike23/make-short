@@ -107,7 +107,7 @@ The scale is judged on the main character:
 Two unit systems are given:
 
 - **%:** BT.709 luma from a full-range RGB decode, as a percent of full scale.
-- **signalstats:** ffmpeg `signalstats` run on 1080×1920 RGB PNG stills, exactly as `v3/gate.py` measures (YAVG, SATAVG, YLOW = 10th percentile, YHIGH = 90th percentile).
+- **signalstats:** ffmpeg `signalstats` run on 1080×1920 RGB PNG stills, exactly as `tools/color_check.py` measures (YAVG, SATAVG, YLOW = 10th percentile, YHIGH = 90th percentile).
 
 | Parameter | Target | Range |
 |---|---|---|
@@ -127,7 +127,7 @@ Two unit systems are given:
 | signalstats YAVG / SATAVG, all frames | 111 / 31.5 | per video YAVG 105–116, SATAVG 29–44 |
 | signalstats spread (YHIGH − YLOW) | 117 | per video 111–127 |
 
-**Bands per mood (signalstats, p10–p90 of reference frames).** Use these as the `BAND` table in `gate.py`.
+**Bands per mood (signalstats, p10–p90 of reference frames).** `tools/color_check.py` uses them as its `BAND` table.
 
 | Mood | Frames sampled | YAVG p10 / median / p90 | SATAVG p10 / median / p90 |
 |---|---|---|---|
@@ -178,7 +178,7 @@ Captions are identical to the pixel across all four videos.
 - One line. A card never has two lines.
 - **No entry or exit animation.** No pop, no scale and no fade. Each card replaces the last on one frame.
 - No coloured or highlighted words.
-- **libass recipe** (`v3/voice/finish.mjs`): Arial Black 108 placed with `\an2\pos(540,1400)` gives a 54–55 px cap height and a baseline at 1376. Use outline 5 plus a soft shadow layer (outline 10, `\blur5`, black at 69% opacity) underneath. This matched the reference edge profile best after a 720p upload; tested with a stand-in black-weight font. Check the result with `v3/audit.py`.
+- **libass recipe** (`voice/finish.mjs`): Arial Black 108 placed with `\an2\pos(540,1400)` gives a 54–55 px cap height and a baseline at 1376. Use outline 5 plus a soft shadow layer (outline 10, `\blur5`, black at 69% opacity) underneath. This matched the reference edge profile best after a 720p upload; tested with a stand-in black-weight font. Check the result with `tools/audit.py`.
 
 **Timing**
 

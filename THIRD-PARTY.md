@@ -1,7 +1,6 @@
-# Third-party files
-- `engine/three/`: three.js, MIT License, Copyright 2010-2024 Three.js Authors.
-- `engine/fonts/inter-*`: Inter, SIL Open Font License 1.1.
-- `engine/fonts/jetbrains-mono-*`: JetBrains Mono, SIL Open Font License 1.1.
-- `v3/voice/sfx/*.mp3`: generated with the ElevenLabs sound effects / music API by the author.
-- `v3/voice/fonts/Inter-*.otf`: Inter, SIL Open Font License 1.1 (full text in `v3/voice/fonts/OFL.txt`).
-- Quaternius Universal Animation Library (CC0): not shipped; download it as described in `v3/explainer/README.md`. Used by `v3/explainer/rig.py` for the skeleton and motion.
+# Third-party files and assets
+- `voice/fonts/Inter-*.otf`: Inter, SIL Open Font License 1.1 (full text in `voice/fonts/OFL.txt`).
+- `voice/sfx/*.mp3`, `example/june-and-the-jar/voice/voice.mp3`: generated with the ElevenLabs API by the author.
+- Poly Haven models (CC0): not shipped. `kit/props_lib.py` downloads them on first use into `~/shorts/_assets/polyhaven`.
+- Camera Shakify (Blender extension, GPL): not shipped. It is installed from Blender's extension platform.
+- `legacy/`: the older routes, with their own third-party files: three.js (MIT), Inter and JetBrains Mono (OFL). See `legacy/` for details.

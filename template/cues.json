@@ -1,0 +1,6 @@
+{
+ "_note": "Sound effects on words and on-screen callouts. cues = [sfx, line, wordStem, offset s]; hits = [sfx, frame, volume]. Overlays: stat (a big number with a label), counter (a small label over a number), note, tag. Every callout gets a black outline. Keep them off faces: check the frames in the preview.",
+ "cues": [],
+ "hits": [],
+ "overlays": []
+}

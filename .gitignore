@@ -6,3 +6,7 @@ node_modules/
 *.bak*
 .checked
 refs/
+# frames and sheets from other people's reference videos: never commit or publish them
+styles/*/frames/
+styles/*/sheet_*.png
+styles/*/compare.png

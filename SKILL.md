@@ -1,147 +1,162 @@
 ---
 name: make-short
-description: Guided maker for animated YouTube Shorts and Instagram Reels (9:16). Typing /make-short starts a step-by-step guide that asks the user, one question at a time, for the idea, style, length, story, voice-over script, voice, music, captions and ending, then builds, checks, renders, critiques and finishes the video, and helps publish it. Styles - Blender bean world (3D), anatomy explainer (warm 3D rooms with X-ray reveals, in setup), 2D styles, or a new style measured at 30 fps from the user's reference videos. Never uploads without the user's explicit go. Use for "/make-short" (with or without an idea), "/make-short resume", "make an animated short about ...", "turn this into a Short / Reel".
+description: Guided maker for animated YouTube Shorts and Instagram Reels (9:16, about 60 s) in the cut-out style - flat 2D characters acting in lit 3D worlds, made in Blender - with narration, one-word captions and a camera that moves like the measured reference channel. Typing /make-short starts a step-by-step guide for complete beginners - idea, style, story, script, voice, shot plan, automatic checks, a whole-film preview judged by an agent, the final render, a measured verification, and publishing. It can also learn a new animation style from two example videos (look only; the camera and pacing stay). Never uploads without the user's explicit go. Use for "/make-short" (with or without an idea), "/make-short resume", "make an animated short about ...", "turn this into a Short / Reel", "make a new style from these videos".
 ---
 
 # make-short: the guide
 
-You take the user from an idea to a finished vertical video, **one question at a time**. The user is not a developer and does not use the terminal. You run every command. They answer questions, look at pictures and videos, and record their voice if they choose to.
+You take the user from an idea to a finished vertical video, **one question at a time**. Assume they have never made an animation, don't use the terminal and don't read code. You run every command. They answer questions, look at pictures and videos, and record their voice if they want to.
 
-**SKILL** = this skill's folder ("Base directory for this skill"). **P** = the project folder (step 3). Detailed build steps live in the route files: `references/route-blender.md` (bean world, v3 Blender engine), `references/legacy-2d-route.md` (2D styles), `references/new-style.md` (building a new style). Styles: `references/styles/*.md`.
+**Names used here:**
+- **SKILL** is this skill's folder ("Base directory for this skill").
+- **P** is the project folder, `~/shorts/<slug>`.
+
+**Read before building** (each is short):
+- `references/spec.md`: the targets and house rules (always).
+- `references/workflow.md`: the build-check-preview-render loop.
+- `references/planning.md`: story to shot plan to film.py.
+- `references/acting.md` and `references/world-and-light.md`: how characters move and how places look.
+- `references/style-change.md`: only for a new style.
+- `references/setup.md`: the first run on a computer.
+- `references/troubleshooting.md`: when something breaks.
+
+The worked example of everything is `example/june-and-the-jar/` (`film.py`, `story.md`, `voice/`).
 
 ## How to ask
-- Use **AskUserQuestion**: one question per call (two only where a step says so), with 2-4 options. Put the recommended option first and add "(Recommended)" to its label. The user can always type their own answer. Without that tool, ask in one plain line with numbered options.
-- Start each question with one line saying where you are, for example "Step 5 of 13: story".
-- **Skip** a question when the user's message or `P/brief.json` already answers it, and say the answer in one line ("Style: bean world, from your message").
-- After every answer, update `P/brief.json` and tick the step in `P/progress.md`. Before P exists, hold the answers and write them in step 3.
-- The user can say **"stop"** (progress is saved), **"back"** (ask the previous question again) or **"resume"**. `/make-short resume` continues from `progress.md`.
-- Between questions, write at most 5 short lines. Never show stack traces: fix the error, and say what happened in one line.
+- **AskUserQuestion.** One question per call, with 2–4 options. Put the recommended option first and add "(Recommended)" to its label. The user can always type their own answer. Without that tool, ask in one plain line with numbered options.
+- **Say where you are.** Start each question with one line, for example "Step 5 of 14: the story".
+- **Skip what's answered.** Skip a question when the user's message or `P/brief.json` already answers it, and say the answer in one line ("Style: the default cut-out look, from your message").
+- **Save as you go.** After every answer, update `P/brief.json` and tick the step in `P/progress.md`. Before P exists, hold the answers and write them when you make P.
+- **The user's controls.** **"stop"** saves the progress. **"back"** asks the previous question again. **"resume"** (or `/make-short resume`) continues from `progress.md`.
+- **Keep it short.** Between questions, write at most 5 short lines in plain words. Never show stack traces or code: fix the error, and say what happened in one line.
 
 ## Rules, always
-- Nothing is uploaded or posted unless the user types **go** (step 13). Never ask for, print or open API keys: they live in the user's own environment or key file only.
-- No false claims: never "1 prompt", "one prompt", "one click" or "fully automatic". True: the user approved the story and the plan, and Claude wrote the shots, acting and code.
-- Original characters and content only. A reference **style** may be copied; its characters, names, logos and scripts may not.
-- Facts, and health facts above all, come from sources you checked, listed in `story.md`. Explain, never prescribe.
-- **Look at every still, strip and video frame yourself** (read the PNG) before you show it. Passing numbers is not passing.
-- **Never self-score.** Only a fresh critic agent scores.
-- Quote ETAs from the clock (`date`; on Windows `Get-Date`) at 1.5x your first guess. Rendering loads the GPU: if the user is screen-recording or editing, ask before rendering.
-- Show a picture or video with `open "<file>"` on macOS (`start "" "<file>"` on Windows), plus one line saying what it shows.
+- **Posting.** Nothing is uploaded or posted unless the user types **go** (step 14).
+- **API keys.** Never ask for, print or open an API key. If the user pastes one in the chat, don't use it: tell them to replace that key and save the new one in the key file themselves (step 6).
+- **Copying.** A reference **style** may be copied: its look, never its characters, names, logos or stories.
+- **Facts.** Facts, and health facts above all, come from sources you checked, listed in `story.md`. Explain, never prescribe.
+- **Look before you show.** Look at every still, contact sheet and video yourself (read the PNG) before you show it. Numbers passing is not the same as looking right.
+- **Never self-score.** Only a fresh judge or verifier agent scores.
+- **Time.** Quote clock times (`date`) at 1.5× your estimate. Rendering loads the GPU, so ask before rendering if the user is screen-recording or editing.
+- **Showing things.** On macOS, show a picture or video with `open "<file>"`, plus one line saying what it shows.
+- **Honest claims.** Never say "one prompt", "one click" or "fully automatic". It is true to say: the user approved the story and the plan, and Claude wrote the shots and the code.
 
-## The guide (13 steps)
+## The guide (14 steps)
 
 ### 1. Start
-- Look for unfinished projects: `~/shorts/*/progress.md` (Windows: `C:\shorts\*\progress.md`) without `DONE`. If there are any, ask "Carry on with <slug> (stopped at <step>)?": **Carry on** / **Start a new Short**. To carry on, read its `brief.json` and `progress.md` and jump to the first unticked step.
-- First run on this computer (no `SKILL/.checked`): run `CHECKLIST.md` section A quietly (on macOS `setup-mac.sh` does it). Tell the user only what is missing and what you are installing. Write `SKILL/.checked` when it passes.
+- **Unfinished projects.** Look for `~/shorts/*/progress.md` without `DONE`. If there are any, ask "Carry on with <slug> (stopped at <step>)?": **Carry on** / **Start a new Short**.
+- **First run on this computer** (no `SKILL/.checked`): follow `references/setup.md`. On macOS, run `bash SKILL/setup-mac.sh`. Tell the user only what is missing and what you are installing. Write `SKILL/.checked` when it passes.
+- **First Short ever.** Offer "Want to see how it works on the example first? (a 30 min preview)":
+  - **Yes, preview the example** runs `python3 SKILL/tools/new_project.py june-example --example`, then steps 8–9 of `workflow.md` on it. Show the preview, then come back to step 2.
+  - **No, start mine** (Recommended if they already have an idea).
 
 ### 2. Idea
 Ask "What is this Short about?":
 - **I have an idea**: they type it.
-- **Give me 3 ideas**: if their niche is unknown, ask it in one line, then offer 3 one-line ideas, each with its hook fact, and let them pick.
+- **Give me 3 ideas**: ask their niche in one line if it's unknown, then offer 3 one-line ideas, each with its hook fact.
 - **Make it from something I paste**: an article, notes or a fact; you pull the idea out.
 
-Then confirm the idea in one line.
+Confirm the idea in one line.
 
 ### 3. Style
 Ask "Which look?":
-- **Bean world 3D**: cartoon bean characters in a painted 3D world (Blender). Ready. Best for history and paradox stories.
-- **Anatomy explainer**: warm 3D rooms, stylised adults, X-ray reveals, number callouts, top captions with a key-word box (measured from 6 reference reels). Read `references/styles/anatomy-explainer.md` first; copy `references/styles/anatomy-explainer.targets.json` to `P/critic/targets.json`. While its status is **in setup**, say in one line what is still missing, then ask: **Set the style up now** (follow `references/new-style.md` for that style file; it needs the reference reels) / **Use the bean world this time**.
-- **2D style**: then a second question with the 4 best fits from `references/style-catalogue.md` (flat, blueprint, pixel, woodcut, watercolour, glass, ASCII; voxel, lidar and teardown are 3D).
-- **New style from my reference videos**: follow `references/new-style.md`, then come back here.
+- **The cut-out look** (Recommended). Flat 2D characters with soft shading, acting in warm, lit 3D places. The example's look.
+- **A saved style**: list the folders in `SKILL/styles/` other than `default`, each with its one-line description from `style.json`.
+- **A new style from two example videos**: follow `references/style-change.md`. It takes about 1–2 hours with a test and your approval. Only the look changes; the camera, pacing and captions stay the same.
 
-Make P:
-- Bean world: copy `SKILL/v3` to `~/shorts/<slug>` (outside iCloud Drive / OneDrive).
-- 2D: run `node SKILL/scripts/new-short.mjs "<title>" --style <style> --seconds <s>` right after step 4, because it needs the length.
+Make P: `python3 SKILL/tools/new_project.py <slug> [--style <name>]`. Write the answers so far into `P/brief.json`.
 
-Write `P/brief.json` and `P/progress.md` (templates at the end).
-
-### 4. Length
-Ask "How long?":
-- **Bean world:** 60 s (Recommended; the reference runs 56-65 s) / 30 s / 15 s quick test.
-- **Anatomy explainer:** 45 s (Recommended to start) / 90 s (the reference runs 84-108 s) / 30 s / 15 s quick test.
-- **2D:** 15 s / 20 s / 25 s (25 s is the most).
-
-### 5. Story
+### 4. Story
 Ask "Do you need a story?":
 - **Yes, write it for me** (Recommended).
-- **I have a story or outline**: they paste it; you shape it to the style's formula and keep their content.
-- **I already have the full script**: they paste it; it becomes the narration, and step 6 only checks its length.
+- **I have a story or outline**: shape it to the formula, keeping their content.
+- **I already have the full script**: it becomes the narration, and step 5 only checks its length.
 
-Write `P/story.md` with the style's formula:
-- bean world: the paradox formula, `references/route-blender.md` step 2;
-- anatomy explainer: section 7 of its style file;
-- 2D: `references/story-rules.md`.
+Write `P/story.md` (template in P) by `references/planning.md` sections 1–2:
+- sources first;
+- the logline;
+- 14–16 beats for 60 s, each with a place and an action you can see.
 
-Sources first, then the logline and the beats. Show the logline, the beats and the sources, then ask "Approve the story?": **Approve** / **Change something**. Loop until they approve, then write the approval time into `story.md`.
+Show the logline, the beats and the sources, then ask "Approve the story?": **Approve** / **Change something**. Loop until approved, then write the approval time into story.md.
 
-### 6. Voice-over script
-Ask "Do you want a voice-over?":
-- **Yes, write the script** (Recommended): numbered lines under `## Narration` in `story.md`, one line per beat, at about 3.75 words a second (15 s ≈ 55 words, 30 s ≈ 110, 45 s ≈ 170, 60 s ≈ 225). Show it, then ask **Approve** / **Change something**.
-- **Yes, I'll write it**: they paste it; you check its length against the target and say if it runs long or short.
-- **No voice-over**: music, sound effects and on-screen text only. The beat list sets the timing, so there are no word captions; skip step 7 and step 8's caption question.
+### 5. Narration script
+Write the numbered narration under `## Narration` at 3.75 words a second (60 s ≈ 225 words, 30 s ≈ 110), following the formula: hook, "You see,", middle, payoff. Show it, then ask **Approve** / **Change something**. If the user wrote it, check its length and say if it runs long or short.
 
-### 7. Voice
+### 6. Voice
 Ask "Who reads it?":
-- **I'll record it (free)** (Recommended): show a read sheet with the numbered lines. Tips: a quiet room, the phone or Mac voice memo is fine, one calm take at a steady pace (about <N> s in total), a short pause between lines. They attach the file or save it in `P/voice/`; any audio format works, and you convert it to `voice/voice.mp3` with ffmpeg. Wait for it. Then time every word: Whisper, then `whisper-to-timing.mjs` (`references/route-blender.md` step 3). Read `voice-timing.json` against the script and fix mis-heard lines.
-- **AI voice (ElevenLabs, paid)**: tell them the character count first. The key stays out of the chat. They put one line, `ELEVENLABS_API_KEY=...`, in a plain-text file `~/.make-short-keys` (TextEdit: Format > Make Plain Text). You run `ELEVENLABS_ENV_FILE=~/.make-short-keys node voice/take.mjs <voiceId> voice` and never open or print that file. Ask for the voice ID from their ElevenLabs voice library (it is not secret); `brief.json` keeps it for next time.
-- **I already have the audio**: they attach it; continue as for a recording.
+- **AI voice (ElevenLabs)** (Recommended for the reference sound).
+  - Tell them the character count first.
+  - The key stays out of the chat. They put one line, `ELEVENLABS_API_KEY=...`, in a plain-text file `~/.make-short-keys`. In TextEdit, use Format > Make Plain Text.
+  - Ask for a voice ID from their ElevenLabs voice library. It isn't secret, and `brief.json` keeps it.
+  - Run `ELEVENLABS_ENV_FILE=~/.make-short-keys node voice/take.mjs <voiceId> voice`, then `python3 voice/fit_pace.py`.
+- **I'll record it (free)**.
+  - Show a read sheet with the numbered lines. Tips: a quiet room; a phone or Mac voice memo is fine; one calm take at a steady pace, about <N> s in total.
+  - They attach the file or save it in `P/voice/`.
+  - Convert it to `voice/voice.mp3`, time it with Whisper and run `voice/whisper-to-timing.mjs` (`planning.md` section 3).
+- **I already have the audio**: as for a recording.
 
-### 8. Music and captions (two questions in one call)
-- "Music?" **Starter track** (Recommended) / **My own track** (attach) / **No music**.
-- "Captions?" **The style's own** (Recommended; bean: one big word at 70% of the height; anatomy: a top phrase with a key-word box) / **The other style's** / **None**.
+Read `voice/voice-timing.json` against the script, and fix mis-heard lines. From here on, the timing is locked.
 
-Sound effects on impacts are on by default. Say so in one line, without a question. For the anatomy explainer, you pick the key words and callouts from the script and show them in the plan (step 11).
+### 7. Shot plan
+Write the plan by `planning.md` section 4: one row per shot, with the cut word, the place and mood, the action and travel, and the sizes the camera lands on.
+- **Keep the size budget:** wides (EWS + WS) about a third, FS about a quarter, MS at most a fifth, MCU and CU only for big reactions.
+- **Name the music and endings choice in one line:** the starter track and ending on the payoff, unless they want otherwise. Sound effects on impacts are on by default.
 
-### 9. Ending
-Ask "How should it end?":
-- **Loop back to the start** (Recommended for the bean world).
-- **A follow line for my account**: ask for their @handle if `brief.json` doesn't have it. Never use the reference account's name.
-- **End on the payoff.**
+Show the plan as a short table in plain words, with the clock time the preview will be ready. Ask "Looks right?": **Yes, build it** (Recommended) / **Change something**.
 
-### 10. Check the brief
-Show the brief in at most 8 lines: idea, style, length, story, script, voice, music and captions, ending. Add the time it will take to build and render, as a clock time. Ask "Build it?": **Build it** (Recommended) / **Change something**.
+### 8. Build and check (no pictures yet)
+Write `P/film.py` from the plan (`planning.md` section 5; copy patterns from the example), and `P/voice/cues.json` for the sound effects and 1–3 callouts (`planning.md` section 6). Then follow `workflow.md` steps 1–2:
+1. `python3 tools/chain.py check`, then `python3 tools/plan_check.py`.
+2. Fix every FAIL yourself: sizes, whips, blocked camera, clipping (apply the suggested moves), missing outlines.
+3. Re-check the changed shots.
 
-### 11. Build
-Follow the route. Every gate in it becomes a question here.
-- **Bean world:** `references/route-blender.md` steps 4-7 (contract, beats, shots, gate, render, mix, audit, critic, fix rounds) and 6b if Blender MCP is connected.
-- **2D:** `references/legacy-2d-route.md` steps 3-8 (character sheet, storyboard, render, QA, receipt).
-- **Anatomy explainer:** `references/route-explainer.md` (Blender stills + `explainer/compose.py`), once its style file says **ready**.
+Tell the user in at most 3 lines what the checks found and fixed.
 
-The gates:
-1. **Plan:** show a short shot plan (shots, places, key moments, callouts), then ask "Looks right?" **Yes** / **Change something**.
-2. **Stills:** open the contact sheet, then ask "Render it? About <N> min, done around <HH:MM>." **Render** / **Change something**.
-3. **Render:** post one progress line every few minutes, then mix and audit.
-4. **Critic round:** show the critic's score and its 3 fixes in plain words, then ask:
-   - **Fix these and render again** (about <N> min; Recommended while below the pass bar);
-   - **Good enough, finish it**;
-   - **Stop here**.
+### 9. Preview and judge
+Follow `workflow.md` steps 3–5:
+1. `chain.py preview`, then `assemble.py preview`, then `finish.mjs`.
+2. Make contact sheets and look at them yourself.
+3. Start a fresh judge agent with `agents/judge.md`.
 
-### 12. Final check
-Open the final video and ask "Happy with it?":
-- **Yes, finish**;
-- **Change something**: they say what; fix it and re-render only that range;
-- **Another critic round**.
+Open `out/preview.mp4` for the user. Give the judge's scores and top fixes in plain words, then ask:
+- **Fix these and render the final** (Recommended): about <N> min, done around <HH:MM>.
+- **Fix these and preview again**.
+- **Render as it is**.
+- **Change something myself**: they say what.
 
-### 13. Publish and wrap up
+### 10. Fix
+Apply the fixes (`workflow.md` step 6). Re-check the changed shots, and look at 2–3 preview stills of each changed moment.
+
+### 11. Final render
+1. `python3 tools/chain.py render`. Tell the user the finish time.
+2. Every 15–20 minutes, run `tools/status.py`, make a contact sheet of each finished clip and look at it. Post one progress line.
+3. Re-render a broken shot alone.
+
+### 12. Finish and verify
+1. Follow `workflow.md` steps 8–9: colour check and post-grade, assemble, captions and sound, `audit.py`.
+2. Start a fresh verifier agent with `agents/verifier.md`.
+3. Fix at once everything that needs no re-render (grade, callouts, captions, sound). List the rest for the user.
+
+### 13. Final check
+Open `out/short-final.mp4` and ask "Happy with it?":
+- **Yes, finish**.
+- **Change something**: fix it, and re-render only the shots it touches.
+- **One more fix round**: fix the verifier's re-render items, then steps 11–12 for those shots.
+
+Copy the final to the place the user wants. Archive it in `P/out/rounds/`.
+
+### 14. Publish and wrap up
 Ask "What now?":
-- **Write the title, description and hashtags; I'll upload** (Recommended): 3 titles that start with a verb; a description with the fact and its source; hashtags (`#Shorts` for YouTube, 3-5 topic tags for Reels). Save them in `P/upload-checklist.md` and show them.
-- **Post it for me (private first)**: `references/route-blender.md` step 9 (Blotato: a dry run first, the exact post shown, `--go` only after they type **go**).
+- **Write the title, description and hashtags; I'll upload** (Recommended). Write:
+  - 3 titles that start with a verb;
+  - a description with the facts and their sources (and credits for any CC-BY assets);
+  - hashtags: `#Shorts` for YouTube, 3–5 topic tags for Reels.
+  Save them in `P/upload-checklist.md` and show them.
+- **Post it for me (private first)**: only with a posting connection the user has set up. Do a dry run first, show the exact post, and post only after they type **go**.
 - **Nothing, I'm done.**
 
-Then write the lessons (`references/route-blender.md` step 8), add `DONE` to `progress.md`, and give the final file's location in one line.
+Then add new lessons to `SKILL/references/lessons.md` (what broke, what fixed it). Add `DONE` to `progress.md`, and give the final file's location in one line.
 
 ## Templates
-`P/brief.json` (add any extra answers; keep the keys):
-```json
-{"slug": "", "idea": "", "style": "bean-world | anatomy-explainer | 2d:<style> | <new style>", "length_s": 60,
- "story": "written | user-outline | user-script", "story_approved": "", "voiceover": "written | user | none", "script_approved": "",
- "voice": "recorded | elevenlabs:<voiceId> | file | none", "music": "starter | file:<path> | none", "captions": "style | other | none",
- "ending": "loop | follow:@handle | payoff", "plan_approved": "", "render_approved": "", "critic_scores": [], "final_file": ""}
-```
-`P/progress.md`:
-```
-# <slug>
-- [ ] 1 start   - [ ] 2 idea   - [ ] 3 style   - [ ] 4 length   - [ ] 5 story   - [ ] 6 script   - [ ] 7 voice
-- [ ] 8 music & captions   - [ ] 9 ending   - [ ] 10 brief   - [ ] 11 build (plan / stills / render / critic)
-- [ ] 12 final   - [ ] 13 publish
-Stopped at: <step and what is next>
-```
+- `P/brief.json` (new_project.py writes it; add any extra answers, keep the keys): slug, idea, style, length_s, story_approved, script_approved, voice, music, ending, plan_approved, preview_approved, final_file.
+- `P/progress.md`: 14 ticks (1 start, 2 idea, 3 style, 4 story, 5 script, 6 voice, 7 plan, 8 build + checks, 9 preview + judge, 10 fixes, 11 final render, 12 verify + quick fixes, 13 final check, 14 publish), and a line "Stopped at: <step and what is next>".

@@ -1,0 +1,91 @@
+{
+ "_note": "June and the jar (60 s): Rick-style one-word captions with black outlines; outlined callouts. cues = [sfx, line, wordStem, offset s]; hits = [sfx, frame, volume].",
+ "cues": [
+  [
+   "pop",
+   4,
+   "eight",
+   0.0
+  ],
+  [
+   "sit",
+   9,
+   "sofa",
+   0.0
+  ],
+  [
+   "ding",
+   11,
+   "Twice",
+   0.0
+  ],
+  [
+   "clang",
+   12,
+   "picked",
+   0.15
+  ],
+  [
+   "pop",
+   17,
+   "Four",
+   0.05
+  ],
+  [
+   "pop",
+   17,
+   "six",
+   0.05
+  ],
+  [
+   "ding",
+   17,
+   "eight",
+   0.0
+  ],
+  [
+   "clang",
+   13,
+   "Two",
+   0.0
+  ]
+ ],
+ "impact": {},
+ "hits": [
+  [
+   "boot",
+   562,
+   0.75
+  ],
+  [
+   "pop",
+   1832,
+   0.85
+  ]
+ ],
+ "capUp": [],
+ "overlays": [
+  {
+   "type": "stat",
+   "text": "8%",
+   "label": "muscle lost per decade",
+   "at": "4:eight",
+   "until": "5:Nobody",
+   "x": 60,
+   "y": 1190,
+   "size": 170,
+   "labelSize": 56
+  },
+  {
+   "type": "counter",
+   "text": "2\u00d7",
+   "label": "a week",
+   "at": "11:Twice",
+   "until": 28.36,
+   "x": 470,
+   "y": 1215,
+   "size": 150,
+   "labelSize": 50
+  }
+ ]
+}

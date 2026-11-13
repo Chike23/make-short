@@ -1,0 +1,11 @@
+{
+ "_why": "post-grade from verify.md (round 1): bring shots into their mood bands without re-rendering. Fold these into the set moods for the next render.",
+ "S02": "curves=all='0/0.015 0.5/0.42 1/0.9'",
+ "S06": "colorchannelmixer=rr=0.9:gg=0.9:bb=0.9,hue=s=1.4",
+ "S08": "curves=all='0/0 0.5/0.41 1/0.88'",
+ "S09": "hue=s=0.85",
+ "S10": "hue=s=0.78",
+ "S11": "hue=s=0.85",
+ "S12": "hue=s=0.85",
+ "S15": "colorchannelmixer=rr=1.08:gg=1.08:bb=1.08,hue=s=0.85"
+}
