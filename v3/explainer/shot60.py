@@ -84,7 +84,7 @@ def rick_mood(m):
     P = dict(look.MOODS[m]); g = P['gain']
     if 'night' not in m: P['gain'] = (g[0] * 0.97, g[1] * 0.9, g[2] * 0.9)       # night keeps its blue (no green/blue cut)
     P['sat'] = P['sat'] * 1.1
-    P['lift'] = (1.02, 0.97, 1.08)
+    P['lift'] = (1.0, 0.98, 1.05)
     look.MOODS[m + '_r'] = P
     return m + '_r'
 
@@ -94,8 +94,8 @@ def light(key, f0, f1, **over):
     if key in S6.LIGHT: kw = dict(S6.LIGHT[key])
     elif key == 'living': kw = dict(mood='living')
     elif key == 'living_eve': kw = dict(mood='living_eve', key_energy=160, key_color=(1.0, 0.75, 0.5), window_energy=40)
-    elif key == 'gym': kw = dict(mood='gym', lamp_at=(0, 0, -10), key_at=(-3.3, 0.6, 2.5), key_to=(0.3, 0.3, 1.0), key_energy=650,
-                                 key_color=(0.95, 0.97, 1.0), key_size=2.0, window=None, shadow='key')
+    elif key == 'gym': kw = dict(mood='gym', lamp_at=(0, 0, -10), key_at=(-2.4, -2.9, 3.2), key_to=(0.2, 0.5, 0.9), key_energy=900,
+                                 key_color=(1.0, 0.84, 0.66), window=None, shadow='key')         # warm, high, from the camera side
     elif key == 'park_dusk': kw = dict(mood='park_dusk', lamp_at=(0, 40, -5), key_energy=0, window=None, shadow='LOOK_Sun')
     kw.update(over); kw['mood'] = rick_mood(kw['mood'])
     if kw.get('key_energy'): kw['key_size'] = min(kw.get('key_size', 1.6), 0.45)      # a hard key: shadows that read
@@ -264,7 +264,7 @@ def camera(sid, keys, focus, fstop=1.6, shake=0.55):
         if k.get('size'): rec.append({'f': k['f'], 'size': k['size']})
     for ob in (cam, tgt, cd):                                    # smooth through every key: no easing stops
         for fc in F._fcurves(ob):
-            for kp in fc.keyframe_points: kp.handle_left_type = kp.handle_right_type = 'AUTO'
+            for kp in fc.keyframe_points: kp.handle_left_type = kp.handle_right_type = 'AUTO_CLAMPED'   # no overshoot after a fast move
             fc.extrapolation = 'LINEAR'
     sc.camera = cam
     try:
@@ -292,7 +292,7 @@ def check_camera(sid, cam, R, f0, f1, step=2):
     """The camera never sits inside the set, the subject stays in frame, the head is not cut (except in close shots),
     and the face is not in the caption band. Prints a CHECK line per problem run (read it before rendering)."""
     from bpy_extras.object_utils import world_to_camera_view
-    sc = bpy.context.scene; names = tuple(c['name'] for c in CAST)
+    sc = bpy.context.scene; names = (R['name'],)                 # other characters count as blockers
     def mine(o):
         while o is not None:
             if o.name.startswith(names): return True
@@ -367,7 +367,7 @@ def dumbbell(name, kg, col, scale=1.0):
 # ================================================================ the shots
 def S01(f0, f1):                                    # kitchen: "At sixty-two, June couldn't open a jar of pickles. She blamed the lid."
     setup(f0, f1); S6.kitchen()
-    J = cast('june', (1.4, 0.0), face=('open', 'grin', 'determined'), f0=f0, f1=f1)
+    J = cast('june', (1.4, 0.0), face=('open', 'flat', 'determined'), f0=f0, f1=f1)
     jar = S6.jar('jar'); hold_prop(J, jar, 'sr', (0.0, -0.075, -0.03))
     L.pose(J, f0 - 12, f0 - 10, {'ik_sr': (0.07, 1.08), 'ik_sl': (0.03, 1.27), 'front_sl': True, 'front_sr': True})
     L.walk(J, f0, f0 + 44, [(1.4, 0.0), (0.25, 1.1)], step=11, ease=(False, True), arms=None, bob=0.02, lift=0.86)  # walks in, twisting
@@ -377,13 +377,16 @@ def S01(f0, f1):                                    # kitchen: "At sixty-two, Ju
         L.pose(J, f, f + 4, {'ik_sl': (-0.02, 1.27), 'ik_sr': (0.055, 1.08), 'torso': -5, 'head': 3})
         L.pose(J, f + 4, f + 8, {'ik_sl': (0.08, 1.25), 'ik_sr': (0.085, 1.08), 'torso': 5, 'head': -3})
         k += 1
-    L.face(J, f0 + 8, eyes='closed', mouth='grin', brows='determined'); L.face(J, wf(1, 'June'), eyes='open', mouth='grin', brows='determined')
+    L.face(J, f0 + 8, eyes='closed', mouth='frown', brows='determined'); L.face(J, wf(1, 'June'), eyes='open', mouth='flat', brows='determined')
     L.look(J, f0 + 6, dx=0.004, dz=-0.009)
     L.pose(J, co, co + 3, {'torso': 0, 'head': 0})                                                 # hit-stop on "couldn't"
     L.pose(J, co + 3, co + 10, {'squash': (1.04, 0.95), 'head': 8, 'ik_sl': (-0.06, 1.16)})        # ...then a defeated slump
     L.face(J, co + 3, eyes='open', mouth='frown', brows='worried'); L.look(J, co + 1, dx=0.0, dz=-0.011)
     L.pose(J, pk, pk + 8, {'squash': (1.0, 1.0), 'head': 4})
-    big(J, b, {'ik_sr': (0.2, 1.3), 'ik_sl': (-0.16, 1.05), 'front_sl': False, 'head': 6}, antic=6, move=6, settle=10, squash=0.1,
+    L.pose(J, jr - 6, jr, {'ik_sl': (-0.02, 1.27), 'front_sl': True})                                # one last twist in the insert...
+    L.pose(J, jr, jr + 5, {'ik_sl': (0.08, 1.25), 'hand_sl': -30})
+    L.pose(J, jr + 5, jr + 8, {'ik_sl': (0.17, 1.16), 'hand_sl': 25})                                # ...and her hand slips off the lid
+    big(J, b, {'ik_sr': (0.2, 1.3), 'ik_sl': (-0.16, 1.05), 'front_sl': False, 'head': 6}, antic=6, move=8, settle=10, squash=0.1,
         face=('open', 'frown', 'determined'), look=(0.008, -0.004))                                 # holds the jar up, glares at it
     for k, f in enumerate(range(b + 8, b + 20, 4)):                                                  # shakes it at the lid
         L.pose(J, f, f + 2, {'ik_sr': (0.2 + (0.025 if k % 2 else -0.025), 1.3 + (0.015 if k % 2 else -0.015))})
@@ -392,14 +395,14 @@ def S01(f0, f1):                                    # kitchen: "At sixty-two, Ju
     L.look(J, f1 - 2, dx=0.0, dz=0.0)                                                                # ...then a look to camera
     jp = objpos(jar, jr) + Vector((0, 0, 0.1)); P = lambda f: pos(J, f)
     cam = camera('S01', [
-        dict(f=f0 - 15, size='FS', at=P(f0), az=-8, el=4, lens=28), dict(f=f0, size='FS', at=P(f0), az=-6, el=4, lens=28),
-        dict(f=f0 + 26, size='MCU', at=P(f0 + 26), az=-2, el=3, lens=42),
-        dict(f=f0 + 48, size='MCU', at=P(f0 + 48), az=2, el=3, lens=42),
-        dict(f=jr, size='INS', H=0.42, cz=0.0, at=jp, dx=-0.06, az=4, el=2, lens=50),
-        dict(f=pk, size='INS', H=0.4, cz=0.0, at=jp, dx=0.06, az=12, el=2, lens=50),
-        dict(f=pk + 16, size='MCU', at=P(pk + 16), az=8, el=3, lens=42),
-        dict(f=b + 6, size='MS', at=P(b), az=10, el=4, lens=32, dz=0.08),
-        dict(f=f1, size='FS', at=P(f1), az=14, el=5, lens=30), dict(f=f1 + 25, size='FS', at=P(f1), az=16, el=6, lens=29)],
+        dict(f=f0 - 15, size='FS', at=P(f0), az=-6, el=4, lens=28), dict(f=f0, size='FS', at=P(f0), az=-5, el=4, lens=28),
+        dict(f=f0 + 26, size='MS', H=1.6, cz=1.22, at=P(f0 + 26), az=-2, el=3, lens=34),
+        dict(f=co + 2, size='MCU', at=P(co), az=1, el=3, lens=40),
+        dict(f=jr + 3, size='INS', H=0.42, cz=0.0, at=jp, dx=-0.05, az=4, el=2, lens=50),
+        dict(f=pk + 4, size='INS', H=0.40, cz=0.0, at=jp, dx=0.05, az=10, el=2, lens=50),
+        dict(f=b - 3, size='MS', H=1.6, cz=1.22, at=P(b), az=10, el=3, lens=34),
+        dict(f=f1 + 8, size='MS', H=1.75, cz=1.18, at=P(f1), az=13, el=4, lens=32),
+        dict(f=f1 + 30, size='MS', H=1.85, cz=1.15, at=P(f1), az=15, el=4, lens=32)],
         focus=J['j']['torso'])
     light('kitchen', f0, f1 + HANDLE)
     finish('S01', f0, f1, cam)
@@ -415,16 +418,17 @@ def S02(f0, f1):                                    # bathroom mirror: "You see,
     L.pose(J, ft - 2, ft + 6, {'torso': -6, 'head': -6})                                           # leans in to the mirror...
     L.pose(J, ft + 4, ft + 6, {'front_sr': True})
     L.pose(J, ft + 5, ft + 12, {'ik_sr': (0.12, 1.72), 'hand_sr': 20})                              # ...pats her hair
-    L.pose(J, ft + 12, ft + 16, {'ik_sr': (0.15, 1.69)}); L.pose(J, ft + 16, m - 6, {'arm_sr': (9, 10, 0), 'front_sr': False, 'torso': 0})
+    L.pose(J, ft + 12, m - 1, {'arm_sr': (9, 10, 0), 'front_sr': False, 'torso': 0})
     L.face(J, ft + 4, eyes='happy', mouth='smile', brows='happy')
     big(J, m, {'arm_sl': (86, 108, 12), 'head': -6}, antic=7, move=6, settle=10, squash=0.12,
         face=('open', 'grin', 'happy'), look=(-0.008, 0.003))                                      # flexes at the mirror
-    L.xray(J, m + 4, m + 9)
+    L.xray(J, m + 3, m + 5)
     for k, (f, sc_) in enumerate(((q, 0.85), (st, 0.7), (d, 0.5))):                                 # the bicep deflates in 3 steps
         S5.muscles(J, f, f + 6, sc_, 0.88 + 0.04 * (2 - k)); S5.pulse(J, f, k)
     L.face(J, q + 2, eyes='open', mouth='flat', brows='surprised'); L.face(J, d + 2, eyes='wide', mouth='O', brows='worried')
     L.look(J, q - 3, dx=-0.009, dz=0.0)
     L.pose(J, e - 9, e - 4, {'arm_sl': (40, 60, 0), 'head': 0})
+    L.xray(J, e - 6, e - 4, on=False)                                                               # the shock in her own colours
     big(J, e - 2, {'ik_sl': (-0.30, 1.62), 'ik_sr': (0.30, 1.62), 'hand_sl': -35, 'hand_sr': -35, 'lift': 0.07},
         antic=6, move=5, settle=12, squash=0.12, hold=3, face=('wide', 'O', 'surprised'), look=(0.0, 0.0))   # "eight percent": shock
     L.pose(J, e + 10, e + 14, {'lift': 0.0}); L.pose(J, e + 14, e + 18, {'squash': (1.08, 0.92)}); L.pose(J, e + 18, e + 28, {'squash': (1.0, 1.0)})
@@ -435,10 +439,10 @@ def S02(f0, f1):                                    # bathroom mirror: "You see,
     L.sway(J, v, f1 + HANDLE, deg=1.5, period=40)
     p = pos(J, f0 + 36)
     cam = camera('S02', [
-        dict(f=f0 - 15, size='MS', at=pos(J, f0 + 10), az=-10, el=2, lens=34), dict(f=f0, size='MS', at=pos(J, f0 + 10), az=-9, el=2, lens=34),
-        dict(f=ft, size='FS', at=p, az=-5, el=4, lens=30), dict(f=m + 4, size='MS', at=p, dx=-0.22, az=-1, el=3, lens=40),
-        dict(f=d + 6, size='MS', at=p, dx=-0.18, az=3, el=3, lens=40),
-        dict(f=e, size='MCU', at=p, az=7, el=2, lens=42), dict(f=e + 26, size='MS', at=p, az=10, el=3, lens=38),
+        dict(f=f0 - 15, size='MS', at=pos(J, f0), az=-10, el=2, lens=34), dict(f=f0, size='MS', at=pos(J, f0), az=-9, el=2, lens=34),
+        dict(f=ft, size='FS', at=p, az=-5, el=4, lens=30), dict(f=m + 4, size='MS', at=p, dx=-0.22, dz=0.14, az=-1, el=3, lens=38),
+        dict(f=d + 6, size='MS', at=p, dx=-0.18, dz=0.14, az=3, el=3, lens=38),
+        dict(f=e, size='MS', H=1.25, cz=1.52, at=p, az=7, el=2, lens=40), dict(f=e + 26, size='MS', at=p, dz=0.12, az=10, el=3, lens=36),
         dict(f=f1, size='MCU', at=p, az=13, el=1, lens=42, dz=-0.06), dict(f=f1 + 25, size='MCU', at=p, az=14, el=1, lens=42, dz=-0.06)],
         focus=J['j']['torso'])
     light('bath', f0, f1 + HANDLE)
@@ -510,9 +514,9 @@ def S04(f0, f1):                                    # stairs, day: "The stairs f
     L.face(J, f0 + 40, mouth='frown'); L.look(J, f0 + 18, dx=0.0, dz=0.008)
     P = lambda f: pos(J, f)
     cam = camera('S04', [
-        dict(f=f0 - 15, size='FS', at=P(f0), cam=(2.5, 2.6, 1.0), lens=28), dict(f=f0, size='FS', at=P(f0), cam=(2.45, 2.45, 1.05), lens=28),
-        dict(f=f0 + 30, size='FS', at=P(f0 + 30), cam=(2.2, 1.9, 1.4), lens=30),
-        dict(f=f1 + 8, size='MS', at=P(f1), cam=(1.9, 1.4, 1.8), lens=36), dict(f=f1 + 30, size='MS', at=P(f1), cam=(1.8, 1.2, 1.9), lens=36)],
+        dict(f=f0 - 15, size='FS', at=P(f0), cam=(0.28, 1.0, 2.78), lens=26), dict(f=f0, size='FS', at=P(f0), cam=(0.25, 0.9, 2.75), lens=26),
+        dict(f=f0 + 30, size='FS', at=P(f0 + 30), cam=(0.2, 0.55, 2.7), lens=28),
+        dict(f=f1 + 8, size='MS', at=P(f1), cam=(0.15, 0.25, 2.66), lens=32), dict(f=f1 + 30, size='MS', at=P(f1), cam=(0.12, 0.1, 2.64), lens=34)],
         focus=J['j']['torso'])
     light('hall', f0, f1 + HANDLE)
     finish('S04', f0, f1, cam, grounds={'june': lambda x, y: S6.stairs_ground(x, y)})
@@ -535,7 +539,7 @@ def S05(f0, f1):                                    # living room: "and getting 
     L.pose(J, f0 + 20, f0 + 22, {'squash': (1.08, 0.92), 'ik_sl': (-0.19, 0.8), 'ik_sr': (0.19, 0.8), 'head': 8})
     L.pose(J, f0 + 22, f0 + 26, {'squash': (0.98, 1.02)}); L.pose(J, f0 + 26, f0 + 30, {'squash': (1.0, 1.0)})
     tremble(J, f0 + 6, f0 + 14, 'arm_sl', 6, 2); tremble(J, f0 + 6, f0 + 14, 'arm_sr', 6, 2)
-    L.face(J, f0 + 6, eyes='closed', mouth='grin', brows='determined')
+    L.face(J, f0 + 6, eyes='closed', mouth='frown', brows='determined')
     L.face(J, f0 + 22, eyes='open', mouth='frown', brows='worried'); L.look(J, f0 + 19, dx=0.0, dz=-0.006)   # "ugh"
     # second try: rocks forward, and up she comes, off the sofa
     L.look(J, p_ - 5, dx=-0.006, dz=0.004)
@@ -549,10 +553,12 @@ def S05(f0, f1):                                    # living room: "and getting 
     L.face(J, p_ + 12, eyes='open', mouth='flat', brows='worried')
     p = Vector((SOFA[0], SOFA[1], 0))
     cam = camera('S05', [
-        dict(f=f0 - 15, size='MS', at=p, az=-12, el=2, lens=40, dz=SIT + 0.15), dict(f=f0, size='MS', at=p, az=-10, el=2, lens=40, dz=SIT + 0.15),
+        dict(f=f0 - 15, size='MS', at=p, az=-12, el=2, lens=38, dz=SIT + 0.28), dict(f=f0, size='MS', at=p, az=-10, el=2, lens=38, dz=SIT + 0.28),
         dict(f=f0 + 22, size='MS', at=p, az=-6, el=2, lens=38, dz=SIT + 0.2),
-        dict(f=p_ + 4, size='FS', at=Vector((SOFA[0], 0.9, 0)), az=0, el=4, lens=32), dict(f=f1 + 8, size='FS', at=Vector((SOFA[0], 0.8, 0)), az=4, el=5, lens=31),
-        dict(f=f1 + 30, size='FS', at=Vector((SOFA[0], 0.8, 0)), az=8, el=6, lens=30)],
+        dict(f=p_ - 2, size='MS', at=p, az=-5, el=2, lens=38, dz=SIT + 0.3),
+        dict(f=p_ + 7, size='FS', at=Vector((SOFA[0], 0.9, 0)), az=0, el=4, lens=32),
+        dict(f=f1 + 8, size='FS', at=Vector((SOFA[0] - 0.15, 0.8, 0)), az=6, el=5, lens=30),
+        dict(f=f1 + 30, size='FS', at=Vector((SOFA[0] - 0.3, 0.8, 0)), az=12, el=6, lens=29)],
         focus=J['j']['torso'])
     light('living', f0, f1 + HANDLE, key_at=(0.2, -0.9, 2.4), key_to=(SOFA[0], SOFA[1], 0.9), key_energy=600, key_size=0.6)
     finish('S05', f0, f1, cam)
@@ -567,10 +573,11 @@ def S06(f0, f1):                                    # stairs, night: "Then one n
     L.face(J, f0 + 2, eyes='open', mouth='flat', brows='neutral'); L.look(J, f0 + 4, dx=0.0, dz=-0.008)
     root = J['j']['root']
     L.face(J, s, eyes='wide', mouth='O', brows='surprised'); L.look(J, s - 3)
-    L.pose(J, s - 1, s + 3, {'arm_sl': (130, 30, 0), 'arm_sr': (130, 30, 0), 'head': -12, 'squash': (0.92, 1.1)},
-           interp='BACK', easing='EASE_OUT')                                                          # the kick: feet out, arms up
-    imp = s + 9
-    F.key(root, 'location', LZ, s - 1, 'BEZIER', 'AUTO', 2); F.key(root, 'location', LZ + 0.2, s + 3, 'QUAD', 'EASE_IN', 2)
+    big(J, s, {'arm_sl': (150, 40, 0), 'arm_sr': (70, 110, 0), 'torso': 14, 'head': -12}, antic=3, move=3, over=0.2, settle=4, squash=0.1)
+    F.key(root, 'rotation_euler', 0.0, s - 1, 'BEZIER', 'AUTO', 1); F.key(root, 'rotation_euler', math.radians(-18), s + 5, 'BEZIER', 'AUTO', 1)
+    F.key(root, 'rotation_euler', 0.0, s + 14, 'BEZIER', 'AUTO', 1)                                  # a lopsided flail, tipping back
+    imp = s + 7
+    F.key(root, 'location', LZ, s - 1, 'BEZIER', 'AUTO', 2); F.key(root, 'location', LZ + 0.1, s + 2, 'QUAD', 'EASE_IN', 2)
     F.key(root, 'location', LZ - 0.84, imp, 'CONSTANT', 'AUTO', 2)                                     # accelerating fall, then hit-stop
     L.pose(J, imp - 2, imp, {'squash': (1.15, 0.85), 'arm_sl': (70, 20, 0), 'arm_sr': (70, 20, 0), 'head': 6})
     L.pose(J, imp + 3, imp + 6, {'squash': (0.96, 1.04)}, interp='BACK', easing='EASE_OUT')
@@ -585,10 +592,11 @@ def S06(f0, f1):                                    # stairs, night: "Then one n
         dict(f=f0 - 15, size='WS', at=pos(J, f0), cam=(0.35, 7.6, 1.5), lens=30), dict(f=f0, size='WS', at=pos(J, f0), cam=(0.33, 6.0, 1.55), lens=30),
         dict(f=s - 4, size='FS', at=pos(J, s - 4), cam=(0.25, 4.4, 1.8), lens=34),
         dict(f=imp - 1, size='FS', at=pos(J, s - 4), cam=(0.22, 3.8, 2.1), lens=38),                    # the camera lags: she drops out of frame centre
-        dict(f=imp + 8, size='MS', at=sit, cam=(0.2, 2.6, 2.75), lens=48, H=1.45, cz=1.45),
-        dict(f=c, size='MCU', at=sit, cam=(0.15, 2.2, 3.0), lens=60, H=0.88, cz=1.55),
-        dict(f=f1 + 8, size='MCU', at=sit, cam=(0.05, 1.7, 3.05), lens=76, H=0.88, cz=1.55),
-        dict(f=f1 + 30, size='MCU', at=sit, cam=(0.0, 1.45, 3.07), lens=80, H=0.88, cz=1.55)],
+        dict(f=imp + 8, size='MS', at=sit, cam=(0.2, 2.6, 2.9), lens=44, H=1.45, cz=1.45),
+        dict(f=lg, size='MS', at=sit, cam=(0.18, 2.4, 3.0), lens=50, H=1.2, cz=1.5),
+        dict(f=c, size='MCU', at=sit, cam=(0.15, 2.2, 3.1), lens=58, H=0.88, cz=1.5),
+        dict(f=f1 + 8, size='MCU', at=sit, cam=(0.05, 1.7, 3.15), lens=72, H=0.88, cz=1.62),
+        dict(f=f1 + 30, size='MCU', at=sit, cam=(0.0, 1.45, 3.17), lens=76, H=0.88, cz=1.62)],
         focus=J['j']['torso'], fstop=1.4)
     light('hall_night', f0, f1 + HANDLE)
     finish('S06', f0, f1, cam, grounds={'june': lambda x, y: LZ})
@@ -601,20 +609,20 @@ def S07(f0, f1):                                    # living room, evening: "Thr
     w = wf(9, 'weeks'); so = wf(9, 'sofa'); wa = wf(9, 'waiting'); hip = wf(9, 'hip')
     root = J['j']['root']
     blanket = W.box('blanket', (0.7, 0.05, 0.42), (0, 0, 0), W.toon('blanket', '#d97a5a', 'canvas_green.png'), ink=0.004)
-    L.hold(J, blanket, 'sr', (-0.17, -0.07, -0.08)); F.key(blanket, 'scale', (0, 0, 0), f0, 'CONSTANT')
-    ice = W.box('icepack', (0.14, 0.05, 0.1), (0, 0, 0), W.toon('icepack', '#7fc8e8'), ink=0.004)
+    L.hold(J, blanket, 'sr', (-0.17, -0.07, 0.24)); F.key(blanket, 'scale', (0, 0, 0), f0, 'CONSTANT')
+    ice = W.box('icepack', (0.18, 0.05, 0.13), (0, 0, 0), W.toon('icepack', '#7fc8e8'), ink=0.004)
     L.hold(J, ice, 'sr', (0.0, -0.06, -0.03)); F.key(ice, 'scale', (0, 0, 0), f0, 'CONSTANT')
     L.look(J, f0 + 4, dx=-0.006, dz=-0.004)                                    # watching the TV, down and to the left
     # a time-lapse in one push: slumped with a blanket, lying back, upright with an ice pack
     for f, spec, fc in ((w, {'head': 12, 'torso': 0, 'arm_sl': (12, 20, 0)}, ('open', 'frown', 'worried')),
                         (so, {'torso': -15, 'head': -6, 'lift': SIT - 0.1, 'arm_sl': (60, 120, 0)}, ('closed', 'flat', 'neutral')),
-                        (wa, {'torso': 0, 'head': 4, 'lift': SIT, 'arm_sl': (14, 40, 0), 'ik_sr': (0.2, 0.92), 'hand_sr': -40},
+                        (wa, {'torso': 0, 'head': 4, 'lift': SIT, 'arm_sl': (14, 40, 0), 'ik_sr': (0.22, 1.0), 'hand_sr': -40},
                          ('open', 'frown', 'determined'))):
         L.pose(J, f - 2, f, {'squash': (1.06, 0.94), **spec}); L.pose(J, f, f + 3, {'squash': (1.0, 1.0)})
         L.face(J, f, *fc)
     hide_until(blanket, w); F.key(blanket, 'scale', (1, 1, 1), wa - 1, 'CONSTANT'); F.key(blanket, 'scale', (0, 0, 0), wa, 'CONSTANT')
     hide_until(ice, wa)
-    for k, f in enumerate(range(hip - 8, f1 + HANDLE, 6)): L.pose(J, f, f + 3, {'ik_sr': (0.2 + (0.015 if k % 2 else -0.015), 0.92)})
+    for k, f in enumerate(range(hip - 8, f1 + HANDLE, 6)): L.pose(J, f, f + 3, {'ik_sr': (0.22 + (0.015 if k % 2 else -0.015), 1.0)})
     L.look(J, wa + 2, dx=0.004, dz=-0.009)
     sc = bpy.context.scene
     td = bpy.data.lights.new('tv', 'AREA'); td.size = 0.6; td.color = (0.45, 0.62, 1.0)
@@ -624,16 +632,19 @@ def S07(f0, f1):                                    # living room, evening: "Thr
     p = Vector((SOFA[0], SOFA[1], 0))
     cam = camera('S07', [
         dict(f=f0 - 15, size='FS', at=p, az=14, el=6, lens=30), dict(f=f0, size='FS', at=p, az=12, el=6, lens=30),
-        dict(f=w + 6, size='MS', at=p, az=6, el=3, lens=38, dz=SIT + 0.15),
-        dict(f=hip, size='MCU', at=p, az=0, el=2, lens=42, H=1.15, cz=1.35, dz=SIT),
-        dict(f=f1 + 8, size='MCU', at=p, az=-10, el=2, lens=44, H=1.1, cz=1.35, dz=SIT),
-        dict(f=f1 + 30, size='MCU', at=p, az=-14, el=2, lens=46, H=1.05, cz=1.35, dz=SIT)],
+        dict(f=w + 6, size='MS', at=p, dx=-0.05, az=6, el=3, lens=36, dz=SIT + 0.25),
+        dict(f=hip, size='MCU', at=p, dx=-0.08, az=0, el=2, lens=42, H=1.15, cz=1.35, dz=SIT),
+        dict(f=f1 + 8, size='MCU', at=p, dx=-0.18, az=-10, el=2, lens=44, H=1.1, cz=1.35, dz=SIT),
+        dict(f=f1 + 30, size='MCU', at=p, dx=-0.28, az=-14, el=2, lens=46, H=1.05, cz=1.35, dz=SIT)],
         focus=J['j']['torso'])
     light('living_eve', f0, f1 + HANDLE)
     wl = bpy.data.objects.get('win_light')
     if wl:                                                                     # dusk, night, morning, dusk through the window
         for f, e, col in ((f0, 40, (1.0, 0.64, 0.4)), (so, 0, (1.0, 0.64, 0.4)), (wa, 200, (0.85, 0.92, 1.0)), (f1, 60, (1.0, 0.64, 0.4))):
             wl.data.energy = e; wl.data.color = col; wl.data.keyframe_insert('energy', frame=f); wl.data.keyframe_insert('color', frame=f)
+    sun = bpy.data.objects.get('sun')
+    if sun:                                                                    # the sun outside: sets, rises, a clock you can see
+        for f, z in ((f0, 1.3), (so, 0.45), (wa, 1.9), (f1, 1.5)): F.key(sun, 'location', z, f, 'CONSTANT', 'AUTO', 2)
     finish('S07', f0, f1, cam)
 
 
@@ -666,12 +677,12 @@ def S08(f0, f1):                                    # doctor: "Her doctor wrote 
         dict(f=f0 - 15, size='FS', at=Vector((-0.2, 0.8, 0)), az=-12, el=6, lens=30), dict(f=f0, size='FS', at=Vector((-0.2, 0.8, 0)), az=-10, el=6, lens=30),
         dict(f=pr - 6, size='MS', at=Vector((0.35, 1.45, -0.42)), az=-4, el=3, lens=40, H=1.45, cz=1.45),
         dict(f=pill - 6, size='MS', at=Vector((-0.25, 0.8, 0)), az=3, el=3, lens=34, H=1.9, cz=1.15),
-        dict(f=li + 8, size='INS', at=npos, H=0.34, cz=0.0, az=4, el=1, lens=55),
-        dict(f=tw - 2, size='INS', at=npos, H=0.32, cz=0.0, az=7, el=1, lens=56),
+        dict(f=li + 8, size='MCU', at=Vector((0.35, 1.45, -0.42)), dx=0.08, H=0.9, cz=1.55, az=4, el=1, lens=48),   # the note up by her face
+        dict(f=tw - 2, size='MCU', at=Vector((0.35, 1.45, -0.42)), dx=0.08, H=0.82, cz=1.55, az=7, el=1, lens=50),
         dict(f=tw + 12, size='MS', at=Vector((-0.85, 0.3, 0)), az=4, el=3, lens=40),
         dict(f=f1 + 8, size='MS', at=Vector((-0.85, 0.3, 0)), az=8, el=3, lens=42),
         dict(f=f1 + 30, size='MS', at=Vector((-0.85, 0.3, 0)), az=10, el=3, lens=43)],
-        focus=note, fstop=3.2)
+        focus=note, fstop=5.6)
     light('clinic', f0, f1 + HANDLE, key_at=(-1.7, -1.0, 2.4), key_to=(0.2, 1.0, 0.9), key_size=0.7)
     ld = bpy.data.lights.new('desk_lamp', 'POINT'); ld.energy = 40; ld.color = (1.0, 0.75, 0.45); ld.use_shadow = False
     lo = bpy.data.objects.new('desk_lamp', ld); bpy.context.scene.collection.objects.link(lo); lo.location = (-0.15, 1.15, 1.15)
@@ -679,46 +690,67 @@ def S08(f0, f1):                                    # doctor: "Her doctor wrote 
 
 
 GSPOT = (0.2, 0.45)
+EXTRAS = (('woman2', (-1.6, 1.6), dict(L.SON, top='#f0b429', top_sh='#d39a1c', hair='#c9a46a'), 'lady'),
+          ('kb_guy', (2.6, 2.1), dict(L.YOUNG_MAN, top='#3fae7a', top_sh='#2f9466', skin='#eab896', skin_sh='#d49a78', hair='#c98a3a'), 'man'),
+          ('squat_gal', (-2.6, 1.2), dict(L.DOCTOR, top='#e86a9a', top_sh='#c9527e', trousers='#2e3550'), 'lady'))
 
 
-def _gym_cast(f0, f1, man_at=(1.05, 0.95)):
+def _gym_cast(f0, f1, man_at=(1.05, 0.95), small_on_box=False):
+    """The gym's people and props, the same in every gym shot: the young man at the rack, three gym-goers, the plyo box."""
     M = cast('man', man_at, pal=L.YOUNG_MAN, style='man', face=('open', 'smile', 'determined'), f0=f0, f1=f1)
     db = dumbbell('db_man', 12, '#3b3f4a', 1.1); L.hold(M, db, 'sr', (0.0, -0.06, -0.055))
-    return M
+    X = []
+    for k, (n, at, pal, st) in enumerate(EXTRAS):
+        R = cast(n, at, pal=pal, style=st, face=('open', 'flat', 'determined'), f0=f0, f1=f1); X.append(R)
+        if n == 'squat_gal':                                         # slow squats
+            for f in range(f0 + 4 * k, f1 + HANDLE, 24):
+                L.pose(R, f, f + 12, {'lift': -0.18, 'squash': (1.06, 0.9), 'arm_sl': (80, 0, 0), 'arm_sr': (80, 0, 0)})
+                L.pose(R, f + 12, f + 24, {'lift': 0.0, 'squash': (1.0, 1.0), 'arm_sl': (70, 0, 0), 'arm_sr': (70, 0, 0)})
+        else:
+            d = dumbbell(f'db_{n}', 6 + 2 * k, '#4f8fd8', 0.9); L.hold(R, d, 'sl' if k == 0 else 'sr', (0.0, -0.06, -0.05))
+            _curls(R, f0 + 5 * k, f1 + HANDLE, 'sl' if k == 0 else 'sr', 18 + 2 * k)
+    W.box('plyo', (0.36, 0.34, 0.69), (GSPOT[0] + 0.5, GSPOT[1] + 0.28, 0.345), W.toon('plyo', '#b07a4a', 'wood_crate.png'), ink=0.01)
+    small = None
+    if small_on_box:
+        small = dumbbell('db2_table', 2, '#e86a9a', 0.7); small.location = (GSPOT[0] + 0.44, GSPOT[1] + 0.14, 0.72)
+    return M, X, small
 
 
 def _curls(R, fa, fb, side='sr', every=14, easy=True):
+    """A curl up the centre line, in front of the chest (it reads head-on and stays inside every framing)."""
     for f in range(fa, fb - every + 1, every):
-        L.pose(R, f, f + every // 2, {f'arm_{side}': (12, 138, -15)}, interp='BACK' if easy else 'BEZIER', easing='EASE_OUT')
-        L.pose(R, f + every // 2, f + every, {f'arm_{side}': (9, 8, 0)})
+        L.pose(R, f, f + every // 2, {f'arm_{side}': (4, -125, 0), f'front_{side}': True})
+        L.pose(R, f + every // 2, f + every, {f'arm_{side}': (6, -8, 0)})
 
 
 def S09(f0, f1):                                    # gym, wide: "So June walked into a gym full of people half her age and picked up the smallest dumbbell in the room."
     setup(f0, f1); W.gym()
-    M = _gym_cast(f0, f1); _curls(M, f0, f1 + HANDLE, every=16)
-    J = cast('june', (-2.7, -0.6), face=('open', 'smile', 'determined'), f0=f0, f1=f1)
-    W2 = cast('woman2', (-1.6, 1.6), pal=dict(L.SON, top='#f0b429', top_sh='#d39a1c', hair='#c9a46a'), style='lady', f0=f0, f1=f1)
-    _curls(W2, f0 + 6, f1 + HANDLE, 'sl', 18)
-    W.box('plyo', (0.36, 0.34, 0.69), (GSPOT[0] + 0.5, GSPOT[1] + 0.28, 0.345), W.toon('plyo', '#b07a4a', 'wood_crate.png'), ink=0.01)
-    small = dumbbell('db2_table', 2, '#e86a9a', 0.7); small.location = (GSPOT[0] + 0.44, GSPOT[1] + 0.14, 0.72)
+    pk = wf(12, 'picked'); sm = wf(12, 'smallest'); hf = wf(12, 'half'); ag = wf(12, 'age'); fu = wf(12, 'full')
+    J = cast('june', (-2.4, -0.5), face=('open', 'smile', 'determined'), f0=f0, f1=f1)
+    M, X, small = _gym_cast(f0, f1, small_on_box=True); _curls(M, f0, sm - 8, every=16)
     held = dumbbell('db2_hand', 2, '#e86a9a', 0.7); L.hold(J, held, 'sr', (0.0, -0.06, -0.05)); F.key(held, 'scale', (0, 0, 0), f0, 'CONSTANT')
-    pk = wf(12, 'picked'); sm = wf(12, 'smallest')
-    L.walk(J, f0, pk - 6, [(-2.7, -0.6), (-1.2, 0.0), GSPOT], step=8, ease=(False, True))
-    L.face(J, wf(12, 'full'), eyes='open', mouth='flat', brows='worried'); L.look(J, wf(12, 'full') - 3, dx=0.008, dz=0.002)
-    L.look(J, wf(12, 'half') - 3, dx=-0.008, dz=0.0); L.face(J, wf(12, 'age'), mouth='smile', brows='determined')
+    L.walk(J, f0, pk - 6, [(-2.4, -0.5), (-1.1, 0.0), GSPOT], step=9, ease=(False, True), lift=0.84, bob=0.03)
+    L.face(J, hf, eyes='open', mouth='flat', brows='worried'); L.look(J, hf - 3, dx=0.008, dz=0.002)
+    for R in X[:2]: L.look(R, hf - 3, dx=-0.01, dz=0.0); L.look(R, ag + 9, dx=0.0, dz=0.0)          # two of them glance at her
+    L.look(J, ag - 3, dx=-0.008, dz=0.0); L.face(J, ag + 4, mouth='smile', brows='determined')
     L.look(J, pk - 9, dx=0.009, dz=-0.007)
-    L.pose(J, pk - 6, pk + 2, {'ik_sr': (0.62, 0.66), 'hand_sr': 0, 'torso': 12, 'head': 6, 'squash': (1.05, 0.93)})
+    big(J, pk - 4, {'ik_sr': (0.62, 0.66), 'hand_sr': 0, 'torso': 12, 'head': 6}, antic=4, move=6, over=0.1, settle=4, squash=0.08)
     swap(small, held, pk + 3)
-    L.pose(J, pk + 3, pk + 13, {'arm_sr': (10, 6, 0), 'torso': 0, 'head': -2, 'squash': (1.0, 1.0)}, interp='BACK', easing='EASE_OUT')
-    L.face(J, sm, eyes='happy', mouth='grin', brows='happy'); L.look(J, sm - 3)
-    L.pose(J, sm + 4, sm + 12, {'arm_sr': (60, 100, 0)}, interp='BACK', easing='EASE_OUT')        # shows it off
+    L.pose(J, pk + 3, pk + 11, {'arm_sr': (10, 6, 0), 'torso': 0, 'head': -2})
+    big(J, sm + 2, {'ik_sr': (0.17, 1.74), 'hand_sr': 15, 'head': 6, 'torso': -3}, antic=5, move=6, over=0.15, settle=10,
+        squash=0.08, face=('happy', 'grin', 'happy'), look=(0.008, 0.007))                          # holds it up like a trophy
+    L.look(J, wf(12, 'room') - 3, 0.0, 0.0)                                                         # ...proud, to the lens
+    big(M, sm + 8, {'arm_sr': (165, 10, 0), 'head': -4}, antic=6, move=6, over=0.08, hold=4, settle=10, squash=0.08)   # his 12 kg press behind her
+    G = Vector((GSPOT[0], GSPOT[1], 0))
     cam = camera('S09', [
-        dict(f=f0 - 15, size='WS', at=Vector((-0.6, 0.6, 0)), az=-18, el=14, lens=24), dict(f=f0, size='WS', at=Vector((-0.6, 0.6, 0)), az=-17, el=13, lens=24),
-        dict(f=f0 + 60, size='WS', at=pos(J, f0 + 60), az=-10, el=9, lens=28, H=5.5, cz=1.4),
-        dict(f=pk - 4, size='FS', at=Vector((GSPOT[0], GSPOT[1], 0)), az=-4, el=5, lens=32),
-        dict(f=sm + 2, size='MS', at=Vector((GSPOT[0], GSPOT[1], 0)), az=1, el=3, lens=38),
-        dict(f=f1 + 8, size='MS', at=Vector((GSPOT[0], GSPOT[1], 0)), az=4, el=3, lens=40),
-        dict(f=f1 + 30, size='MS', at=Vector((GSPOT[0], GSPOT[1], 0)), az=5, el=3, lens=40)],
+        dict(f=f0 - 15, size='FS', at=Vector((-2.4, -0.5, 0)), cam=(-1.3, -2.45, 1.15), lens=24),
+        dict(f=f0 + 20, size='FS', at=pos(J, f0 + 20), cam=(-1.0, -2.55, 1.2), lens=24),
+        dict(f=fu, size='WS', H=5.0, cz=1.4, at=Vector((-0.3, 0.9, 0)), cam=(-0.6, -3.6, 1.5), lens=22),
+        dict(f=ag, size='FS', at=pos(J, ag), az=-10, el=4, lens=28),
+        dict(f=pk - 4, size='MS', at=G, dx=0.15, az=-22, el=3, lens=32),
+        dict(f=sm + 4, size='MS', H=1.8, cz=1.3, at=G, dx=0.3, az=-35, el=3, lens=34),
+        dict(f=f1 + 8, size='MS', H=1.7, cz=1.3, at=G, dx=0.3, az=-38, el=3, lens=34),
+        dict(f=f1 + 30, size='MS', H=1.65, cz=1.3, at=G, dx=0.3, az=-40, el=3, lens=34)],
         focus=J['j']['torso'])
     light('gym', f0, f1 + HANDLE)
     finish('S09', f0, f1, cam)
@@ -726,76 +758,89 @@ def S09(f0, f1):                                    # gym, wide: "So June walked
 
 def S10(f0, f1):                                    # gym: "Two kilos. She could barely lift it, and the young man at the rack tried very hard not to stare."
     setup(f0, f1); W.gym()
-    M = _gym_cast(f0, f1, (1.15, 0.9))
-    J = cast('june', GSPOT, face=('open', 'flat', 'determined'), f0=f0, f1=f1)
+    J = cast('june', GSPOT, face=('open', 'smile', 'determined'), f0=f0, f1=f1)
+    M, X, _ = _gym_cast(f0, f1, (1.15, 0.9))
     held = dumbbell('db2_hand', 2, '#e86a9a', 0.7); L.hold(J, held, 'sr', (0.0, -0.06, -0.05))
-    L.pose(J, f0 - 12, f0 - 10, {'arm_sr': (40, 92, 0)})
-    bl = wf(14, 'barely'); ym = wf(14, 'young'); st = wf(14, 'tried'); stare = wf(14, 'stare')
-    L.walk(J, f0 + 6, bl - 4, [GSPOT, (GSPOT[0] - 0.35, GSPOT[1] - 0.1)], step=8, ease=(True, True), arms=None)
-    antic(J, bl - 2, 5, 1.2)
-    L.pose(J, bl, bl + 10, {'arm_sr': (12, 125, -10), 'squash': (1.06, 0.93), 'head': 6})                # strains on the curl
-    tremble(J, bl, ym, 'fore_sr', 6, 4); tremble(J, bl, ym, 'torso', 2, 6)
-    L.face(J, bl + 2, eyes='closed', mouth='frown', brows='determined')
-    L.pose(J, ym - 2, ym + 6, {'arm_sr': (9, 8, 0), 'squash': (1.0, 1.0), 'head': 0})
-    L.face(J, ym + 2, eyes='open', mouth='flat', brows='worried')
+    L.pose(J, f0 - 12, f0 - 10, {'ik_sr': (0.1, 1.48), 'hand_sr': 0, 'front_sr': True})                # the dumbbell up by her face
+    L.look(J, f0, dx=0.006, dz=-0.004)
+    ke = wf(13, 'kilos', end=True); bl = wf(14, 'barely'); it_ = wf(14, 'it'); ym = wf(14, 'young'); st = wf(14, 'tried'); stare = wf(14, 'stare')
+    L.pose(J, ke - 2, bl - 6, {'arm_sr': (6, -8, 0), 'front_sr': False})                               # lowers it to her side
+    big(J, bl, {'arm_sr': (4, -55, 0), 'front_sr': True, 'torso': -5, 'head': 8}, antic=6, move=8, over=0.1, settle=6,
+        squash=0.1, face=('closed', 'grin', 'determined'), look=(0.0, -0.006))                          # halfway up... stuck
+    tremble(J, bl + 10, it_ - 2, 'arm_sr', 3, 2); tremble(J, bl + 10, it_ - 2, 'head', 2, 2)
+    big(J, it_ - 2, {'arm_sr': (4, -125, 0), 'torso': 0, 'head': -4}, antic=3, move=5, over=0.12, settle=8, squash=0.06,
+        face=('wide', 'O', 'surprised'))                                                               # one last heave: it's up
+    tremble(J, it_ + 12, st + 6, 'arm_sr', 2, 2)
+    L.pose(J, st + 6, st + 16, {'arm_sr': (6, -10, 0)}); L.face(J, st + 8, eyes='happy', mouth='grin', brows='happy')
     _curls(M, f0, ym - 4, every=16)
-    L.pose(M, ym - 4, ym + 4, {'arm_sr': (9, 8, 0), 'head': -6})                                         # he freezes, staring
+    L.pose(M, ym - 4, ym + 4, {'arm_sr': (6, -8, 0), 'head': -6})                                      # he freezes, staring
     L.face(M, ym, eyes='wide', mouth='O', brows='surprised'); L.look(M, ym - 3, dx=-0.01, dz=0.0)
-    L.look(M, st, dx=0.012, dz=0.006); L.face(M, st + 1, eyes='open', mouth='flat', brows='neutral')     # ...and looks away, too hard
-    L.pose(M, st, st + 6, {'head': 10, 'torso': 4}, interp='BACK', easing='EASE_OUT')
-    _curls(M, st + 8, f1 + HANDLE, every=8)                                                               # curls double-time, pretending
-    L.look(M, stare - 2, dx=-0.01, dz=0.0); L.look(M, stare + 4, dx=0.012, dz=0.006)
-    hp = hold_point(J, 'sr', f0 + 4)
+    big(M, st, {'head': 10, 'torso': 4}, antic=3, move=5, over=0.2, settle=8, squash=0.04, look=(0.006, 0.012),
+        face=('open', 'O', 'neutral'))                                                                 # snaps away, eyes on the ceiling
+    _curls(M, st + 8, stare - 4, every=10)                                                             # busy pretend curls
+    L.look(M, stare - 3, dx=-0.012, dz=0.0)
+    big(M, stare, {'head': -6}, antic=2, move=3, over=0.2, settle=5, squash=0.03, face=('wide', 'flat', 'surprised'))
+    big(M, stare + 8, {'head': 10}, antic=0, move=3, over=0.15, settle=6, squash=0.03, look=(0.006, 0.012), face=('open', 'O', 'neutral'))
+    hp = hold_point(J, 'sr', f0 + 2)
+    fo = bpy.data.objects.new('S10_focus', None); bpy.context.scene.collection.objects.link(fo)
+    for f, p_ in ((f0 - 15, hp), (ke, hp), (bl - 2, pos(J, bl) + Vector((0, 0, 1.3)))):
+        for i in range(3): F.key(fo, 'location', p_[i], f, 'BEZIER', 'AUTO', i)
     cam = camera('S10', [
-        dict(f=f0 - 15, size='INS', at=hp, H=0.34, cz=0.0, az=-4, el=2, lens=55), dict(f=f0, size='INS', at=hp, H=0.32, cz=0.0, az=-3, el=2, lens=55),
-        dict(f=bl - 4, size='MS', at=pos(J, bl - 4), az=0, el=3, lens=40),
-        dict(f=ym, size='FS', at=Vector((0.55, 0.65, 0)), az=6, el=4, lens=30, H=3.4, cz=1.0),
-        dict(f=st + 4, size='MS', at=Vector((1.15, 0.9, 0)), az=10, el=3, lens=40),
-        dict(f=f1 + 8, size='FS', at=Vector((0.55, 0.65, 0)), az=14, el=4, lens=31, H=3.4, cz=1.0),
-        dict(f=f1 + 30, size='FS', at=Vector((0.55, 0.65, 0)), az=15, el=4, lens=30, H=3.4, cz=1.0)],
-        focus=J['j']['torso'])
+        dict(f=f0 - 15, size='INS', at=hp, H=0.5, cz=0.03, dx=-0.03, az=-4, el=2, lens=55),
+        dict(f=f0, size='INS', at=hp, H=0.48, cz=0.03, dx=-0.02, az=-3, el=2, lens=55),
+        dict(f=ke - 4, size='INS', at=hp, H=0.44, cz=0.03, dx=0.02, az=1, el=2, lens=55),
+        dict(f=bl + 2, size='MS', H=1.15, cz=1.35, at=pos(J, bl), az=-10, el=2, lens=44),
+        dict(f=ym - 2, size='MS', H=1.6, cz=1.25, at=Vector((0.7, 1.0, 0)), cam=(-0.5, -0.8, 1.35), lens=30),
+        dict(f=st + 8, size='MS', H=1.5, cz=1.3, at=Vector((0.75, 1.0, 0)), cam=(-0.4, -0.6, 1.4), lens=32),
+        dict(f=f1 + 8, size='MS', H=1.45, cz=1.32, at=Vector((0.78, 1.0, 0)), cam=(-0.33, -0.48, 1.42), lens=33),
+        dict(f=f1 + 30, size='MS', H=1.45, cz=1.33, at=Vector((0.8, 1.0, 0)), cam=(-0.3, -0.42, 1.43), lens=34)],
+        focus=fo)
     light('gym', f0, f1 + HANDLE)
     finish('S10', f0, f1, cam)
 
 
 def S11(f0, f1):                                    # gym X-ray: "But muscle never stops listening. Week by week, it started to rebuild ... Four kilos. Then six. Then eight."
     setup(f0, f1); W.gym()
-    M = _gym_cast(f0, f1, (1.2, 1.0)); _curls(M, f0, f1 + HANDLE, every=16)
-    sp = (GSPOT[0] - 0.35, GSPOT[1] - 0.1)
+    sp = GSPOT
     J = cast('june', sp, face=('open', 'flat', 'determined'), f0=f0, f1=f1)
+    M, X, _ = _gym_cast(f0, f1, (1.2, 1.0)); _curls(M, f0, f1 + HANDLE, every=16)
     dbs = [dumbbell('db2', 2, '#e86a9a', 0.7), dumbbell('db4', 4, '#4f8fd8', 0.8), dumbbell('db6', 6, '#3fae7a', 0.9),
            dumbbell('db8', 8, '#e08a3a', 1.0)]
     for d in dbs: L.hold(J, d, 'sr', (0.0, -0.06, -0.05))
     li = wf(15, 'listening'); wk = wf(16, 'Week'); rb = wf(16, 'rebuild'); tw = wf(16, 'twenty')
     k4, k6, k8 = wf(17, 'Four'), wf(17, 'six'), wf(17, 'eight')
-    for d, f in zip(dbs[1:], (k4, k6, k8)): F.key(d, 'scale', (0, 0, 0), f0, 'CONSTANT')
-    for a, b, f in ((dbs[0], dbs[1], k4), (dbs[1], dbs[2], k6), (dbs[2], dbs[3], k8)): swap(a, b, f)
+    for d in dbs[1:]: F.key(d, 'scale', (0, 0, 0), f0, 'CONSTANT')
+    for a, b, f in ((dbs[0], dbs[1], k4), (dbs[1], dbs[2], k6), (dbs[2], dbs[3], k8 - 7)): swap(a, b, f)
     L.look(J, li - 6, dx=0.008, dz=0.004)
-    L.pose(J, li - 3, li + 6, {'ik_sl': (-0.168, 1.63), 'hand_sl': -30, 'head': -8, 'front_sl': True}, interp='BACK', easing='EASE_OUT')
-    L.face(J, li + 2, eyes='happy', mouth='grin', brows='happy')
+    big(J, li - 1, {'ik_sl': (-0.168, 1.63), 'hand_sl': -30, 'head': -8, 'front_sl': True}, antic=4, move=5, over=0.12,
+        settle=8, squash=0.06, face=('happy', 'grin', 'happy'))                                     # cups her ear: listening
     L.pose(J, wk - 4, wk + 2, {'arm_sl': (9, 10, 0), 'head': 0, 'front_sl': False})
-    L.xray(J, wk - 2, wk + 4)
-    S5.muscles(J, f0, f0 + 1, 0.5, 0.88)                                                                  # start small (after the decline)
-    for k, f in enumerate((wk, rb, tw, k4, k6, k8)):                                                     # rebuild in steps, with pulses
+    L.xray(J, wk - 1, wk + 1)                                                                          # a hard switch reads as a scan
+    S5.muscles(J, f0, f0 + 1, 0.5, 0.88)                                                              # start small (after the decline)
+    for k, f in enumerate((wk, rb, tw, k4, k6, k8 - 4)):                                              # rebuild in steps, with pulses
         s_ = 0.5 + 0.11 * (k + 1)
         S5.muscles(J, f, f + 8, s_ * 1.05, 0.88 + 0.04 * (k + 1), interp='BACK')
         S5.pulse(J, f + 1, k % 3)
     for h in J['halos']: F.key(h, 'color', 0.0, wk, 'BEZIER', 'AUTO', 3); F.key(h, 'color', 0.85, wk + 10, 'BEZIER', 'AUTO', 3)
     L.face(J, rb, eyes='open', mouth='grin', brows='determined')
-    for f, easy in ((k4 + 2, False), (k6 + 2, True), (k8 + 2, True)):                                    # curls get easier
-        L.pose(J, f, f + 6, {'arm_sr': (12, 138, -15), 'squash': (0.98, 1.03)}, interp='BACK', easing='EASE_OUT')
-        L.pose(J, f + 6, f + 12, {'arm_sr': (9, 8, 0), 'squash': (1.0, 1.0)})
-    L.walk(J, rb + 4, k4 - 2, [sp, (sp[0] + 0.5, sp[1] - 0.25)], step=8, arms=None)                       # she struts a little
-    L.face(J, k8 + 4, eyes='happy', mouth='grin', brows='happy')
-    hop(J, k8 + 14, 0.06, 6)
-    q = Vector((sp[0] + 0.25, sp[1] - 0.12, 0))
+    L.walk(J, rb + 4, k4 - 2, [sp, (sp[0] - 0.55, sp[1] - 0.3), (0.35, 0.1)], step=12, lift=0.84, bob=0.03, carry=True)   # struts a loop
+    for f in (k4 + 2, k6):                                                                            # curls get easier
+        big(J, f, {'arm_sr': (4, -128, 0), 'front_sr': True}, antic=4, move=5, over=0.12, settle=6, squash=0.05)
+        L.pose(J, f + 11, f + 16, {'arm_sr': (6, -8, 0)})
+    big(J, k8 - 4, {'arm_sr': (4, -128, 0), 'front_sr': True, 'ik_sl': (-0.2, 1.8), 'hand_sl': -20, 'head': -6},
+        antic=3, move=5, over=0.15, hold=3, settle=8, squash=0.1, face=('happy', 'grin', 'happy'), look=(0.0, 0.0))   # 8 kg up, fist up
+    P = lambda f: pos(J, f)
     cam = camera('S11', [
-        dict(f=f0 - 15, size='MS', at=q, az=-7, el=3, lens=40), dict(f=f0, size='MS', at=q, az=-6, el=3, lens=40),
-        dict(f=li + 2, size='MCU', at=q, az=-2, el=2, lens=48), dict(f=wk + 6, size='MS', at=q, az=2, el=3, lens=40),
-        dict(f=rb + 8, size='FS', at=q, az=7, el=5, lens=30), dict(f=tw + 4, size='MS', at=q, az=10, el=3, lens=38),
-        dict(f=k4 + 4, size='MCU', at=q, az=6, el=2, lens=46), dict(f=k6 + 4, size='MS', at=q, az=1, el=3, lens=40),
-        dict(f=k8 + 4, size='FS', at=q, az=-4, el=5, lens=31), dict(f=f1 + 8, size='FS', at=q, az=-7, el=6, lens=30),
-        dict(f=f1 + 30, size='FS', at=q, az=-9, el=6, lens=30)],
+        dict(f=f0 - 15, size='MS', at=P(f0), az=-7, el=3, lens=40), dict(f=f0, size='MS', at=P(f0), az=-6, el=3, lens=40),
+        dict(f=li + 2, size='MCU', at=P(li), az=-2, el=2, lens=48),
+        dict(f=wk + 6, size='MS', at=P(wk + 6), az=2, el=3, lens=40),
+        dict(f=rb + 8, size='FS', at=P(rb + 8), az=7, el=5, lens=30),
+        dict(f=tw + 4, size='MS', at=P(tw + 4), az=10, el=3, lens=38),
+        dict(f=k4 + 4, size='MS', at=P(k4 + 4), dz=0.1, az=6, el=2, lens=42),
+        dict(f=k6 + 4, size='MS', H=1.2, cz=1.36, at=P(k6 + 4), az=2, el=2, lens=44),
+        dict(f=k8, size='MCU', H=1.0, cz=1.42, at=P(k8), az=-2, el=2, lens=46),
+        dict(f=f1 + 8, size='MCU', H=0.95, cz=1.44, at=P(f1), az=-4, el=2, lens=46),
+        dict(f=f1 + 30, size='MCU', H=0.92, cz=1.45, at=P(f1), az=-6, el=2, lens=46)],
         focus=J['j']['torso'])
     light('gym', f0, f1 + HANDLE)
     finish('S11', f0, f1, cam)
@@ -803,27 +848,29 @@ def S11(f0, f1):                                    # gym X-ray: "But muscle nev
 
 def S12(f0, f1):                                    # gym: "The young man started asking her for tips."
     setup(f0, f1); W.gym()
-    sp = (GSPOT[0] + 0.15, GSPOT[1] - 0.35)
+    sp = (0.35, 0.1)
     J = cast('june', sp, face=('open', 'grin', 'happy'), f0=f0, f1=f1)
     d8 = dumbbell('db8', 8, '#e08a3a', 1.0); L.hold(J, d8, 'sr', (0.0, -0.06, -0.05))
-    M = cast('man', (1.4, 0.9), pal=L.YOUNG_MAN, style='man', face=('open', 'smile', 'happy'), f0=f0, f1=f1)
+    M, X, _ = _gym_cast(f0, f1, (1.4, 0.9))
     a = wf(18, 'asking'); tp = wf(18, 'tips')
-    L.walk(M, f0, a, [(1.4, 0.9), (0.95, 0.45)], step=8, ease=(False, True))
-    L.pose(M, a - 3, a + 5, {'arm_sl': (35, 60, 0), 'arm_sr': (35, 60, 0), 'head': -6}, interp='BACK', easing='EASE_OUT')   # palms up: how?
-    L.face(M, a, eyes='open', mouth='grin', brows='surprised'); L.look(M, a - 3, dx=-0.01, dz=0.0)
+    L.walk(M, f0, a - 6, [(1.4, 0.9), (0.95, 0.45)], step=8, ease=(False, True))
+    big(M, a - 2, {'ik_sr': (0.1, 1.82), 'hand_sr': -20, 'ik_sl': (-0.28, 1.15), 'head': -6}, antic=4, move=5, over=0.12,
+        settle=8, squash=0.05, face=('open', 'grin', 'surprised'), look=(-0.01, 0.0))                 # scratches his head, points at hers
     L.look(J, a - 2, dx=0.01, dz=0.0)
-    antic(J, tp - 2, 5)
-    L.pose(J, tp, tp + 7, {'arm_sl': (95, 112, 15), 'arm_sr': (12, 138, -15), 'head': -5}, interp='BACK', easing='EASE_OUT')  # shows him
-    L.face(J, tp + 2, eyes='happy', mouth='grin', brows='happy')
-    L.pose(M, tp + 4, tp + 12, {'arm_sl': (95, 112, 15), 'arm_sr': (9, 8, 0), 'head': 4}, interp='BACK', easing='EASE_OUT')   # copies her
-    L.face(M, tp + 6, eyes='open', mouth='smile', brows='determined')
+    big(J, a + 6, {'arm_sr': (4, -128, 0), 'front_sr': True, 'arm_sl': (14, 30, 0), 'head': -5}, antic=5, move=5, over=0.15,
+        settle=8, squash=0.08, face=('happy', 'grin', 'happy'))                                       # "like this"
+    big(M, tp - 6, {'arm_sl': (4, -128, 0), 'front_sl': True, 'ik_sr': (0.2, 0.95), 'head': 4}, antic=4, move=5, over=0.15,
+        settle=8, squash=0.08, face=('open', 'smile', 'determined'), look=(-0.01, 0.0))               # he copies with an empty fist
+    L.look(J, tp + 2, 0.0, 0.0)                                                                       # her proud look to the lens
     q = Vector(((sp[0] + 0.95) / 2, (sp[1] + 0.45) / 2, 0))
     cam = camera('S12', [
         dict(f=f0 - 15, size='FS', at=q, az=16, el=5, lens=30, H=3.2, cz=1.0), dict(f=f0, size='FS', at=q, az=14, el=5, lens=30, H=3.2, cz=1.0),
-        dict(f=a + 4, size='MS', at=q, az=6, el=3, lens=36, H=1.7, cz=1.2), dict(f=f1 + 8, size='MS', at=q, az=0, el=3, lens=38, H=1.6, cz=1.2),
-        dict(f=f1 + 30, size='MS', at=q, az=-3, el=3, lens=38, H=1.6, cz=1.2)],
+        dict(f=a + 4, size='MS', at=q, az=8, el=4, lens=32, H=2.2, cz=1.12),
+        dict(f=tp, size='MS', at=q, az=1, el=4, lens=33, H=2.05, cz=1.15),
+        dict(f=f1 + 8, size='MS', at=q, az=-6, el=4, lens=34, H=1.95, cz=1.18),
+        dict(f=f1 + 30, size='MS', at=q, az=-9, el=4, lens=34, H=1.9, cz=1.18)],
         focus=J['j']['torso'])
-    light('gym', f0, f1 + HANDLE)
+    light('gym', f0, f1 + HANDLE, key_color=(1.0, 0.78, 0.55))
     finish('S12', f0, f1, cam)
 
 
@@ -853,18 +900,16 @@ def S14(f0, f1):                                    # stairs, day: "The stairs g
     for k, f in enumerate(range(f0 + 14, tm - 2, 8)):
         L.pose(J, f, f + 4, {'arm_sl': (30 + (20 if k % 2 else 0), 60, 0), 'arm_sr': (30 + (0 if k % 2 else 20), 60, 0)})
     L.face(J, tw, eyes='open', mouth='grin', brows='determined')
-    antic(J, tm, 4)
-    L.pose(J, tm + 2, tm + 9, {'arm_sr': (150, 30, 0), 'arm_sl': (14, 20, 0), 'lift': S6.LANDING_Z + 0.05, 'squash': (0.95, 1.06)},
-           interp='BACK', easing='EASE_OUT')                                                               # fist pump on the landing
-    L.pose(J, tm + 9, tm + 15, {'lift': S6.LANDING_Z, 'squash': (1.0, 1.0)})
+    big(J, tm + 2, {'arm_sr': (25, 125, -10), 'arm_sl': (14, 20, 0), 'head': -8, 'torso': 5}, antic=4, move=4, over=0.2, hold=3,
+        settle=10, squash=0.1, face=('happy', 'grin', 'happy'))                                       # "Yes!" pull on the landing
     L.face(J, tm + 3, eyes='happy', mouth='grin', brows='happy')
     LZ = S6.LANDING_Z
     cam = camera('S14', [
-        dict(f=f0 - 15, size='WS', at=pos(J, f0), cam=(-0.3, -2.2, LZ + 1.7), lens=32), dict(f=f0, size='WS', at=pos(J, f0), cam=(-0.28, -2.15, LZ + 1.68), lens=33),
-        dict(f=f0 + 40, size='FS', at=pos(J, f0 + 40), cam=(-0.1, -2.0, LZ + 1.6), lens=40),
-        dict(f=tm, size='MS', at=pos(J, tm), cam=(0.2, -2.0, LZ + 1.25), lens=46, H=1.45, cz=1.2),
-        dict(f=f1 + 8, size='MS', at=pos(J, f1), cam=(0.35, -2.05, LZ + 1.2), lens=46, H=1.45, cz=1.2),
-        dict(f=f1 + 30, size='MS', at=pos(J, f1), cam=(0.42, -2.1, LZ + 1.18), lens=46, H=1.45, cz=1.2)],
+        dict(f=f0 - 15, size='WS', at=pos(J, f0), cam=(-0.45, -3.3, LZ + 2.15), lens=26), dict(f=f0, size='WS', at=pos(J, f0), cam=(-0.42, -3.0, LZ + 2.02), lens=27),
+        dict(f=f0 + 40, size='FS', at=pos(J, f0 + 40), cam=(-0.2, -2.4, LZ + 1.75), lens=34),
+        dict(f=tm, size='MS', at=pos(J, tm), cam=(0.2, -2.0, LZ + 1.35), lens=42, H=1.45, cz=1.4),
+        dict(f=f1 + 8, size='MS', at=pos(J, f1), cam=(0.35, -2.05, LZ + 1.3), lens=42, H=1.45, cz=1.4),
+        dict(f=f1 + 30, size='MS', at=pos(J, f1), cam=(0.42, -2.1, LZ + 1.28), lens=42, H=1.45, cz=1.4)],
         focus=J['j']['torso'])
     light('hall', f0, f1 + HANDLE)
     finish('S14', f0, f1, cam, grounds={'june': S6.stairs_ground})
@@ -875,14 +920,14 @@ def S15(f0, f1):                                    # park at sunset: "By summer
     G = W.park_ground
     F.LIT = dict(F.LIT, tint=0.12)
     J = cast('june', (-0.6, 7.2), face=('happy', 'grin', 'happy'), f0=f0, f1=f1)
-    A = cast('walk1', (-0.98, 4.6), pal=dict(L.YOUNG_MAN, top='#7a5ab0', top_sh='#634894'), style='man', face=('open', 'flat', 'neutral'), f0=f0, f1=f1)
-    B = cast('walk2', (-0.42, 4.3), pal=dict(L.SON, top='#e2574c', top_sh='#c2443b', hair='#2a1d18'), style='lady', face=('open', 'flat', 'neutral'), f0=f0, f1=f1)
+    A = cast('walk1', (0.2, 4.6), pal=dict(L.YOUNG_MAN, top='#7a5ab0', top_sh='#634894'), style='man', face=('open', 'flat', 'neutral'), f0=f0, f1=f1)
+    B = cast('walk2', (-0.15, 4.3), pal=dict(L.SON, top='#e2574c', top_sh='#c2443b', hair='#2a1d18'), style='lady', face=('open', 'flat', 'neutral'), f0=f0, f1=f1)
     L.jog(J, f0, f1 + HANDLE, [(-0.6, 7.2), (-0.72, 4.4), (-0.75, 2.2)], ground=G, ease=(False, False))
-    L.walk(A, f0, f1 + HANDLE, [(-0.98, 4.6), (-1.0, 3.6)], step=12, ground=G, ease=(False, False), bob=0.012, lift=0.95)
-    L.walk(B, f0, f1 + HANDLE, [(-0.42, 4.3), (-0.45, 3.4)], step=12, ground=G, ease=(False, False), bob=0.012, lift=0.95)
+    L.walk(A, f0, f1 + HANDLE, [(0.2, 4.6), (0.18, 3.6)], step=12, ground=G, ease=(False, False), bob=0.012, lift=0.95)
+    L.walk(B, f0, f1 + HANDLE, [(-0.15, 4.3), (-0.17, 3.4)], step=12, ground=G, ease=(False, False), bob=0.012, lift=0.95)
     ps = wf(21, 'past')
     L.face(A, ps + 4, eyes='wide', mouth='O', brows='surprised'); L.face(B, ps + 8, eyes='wide', mouth='O', brows='surprised')
-    L.look(A, ps + 1, dx=0.01, dz=0.0); L.look(B, ps + 5, dx=-0.01, dz=0.0)
+    L.look(A, ps + 1, dx=-0.01, dz=0.0); L.look(B, ps + 5, dx=-0.01, dz=0.0)
     L.look(J, ps - 2, dx=0.0, dz=0.0); L.face(J, ps + 2, eyes='open', mouth='grin', brows='determined')
     cam = camera('S15', [
         dict(f=f0 - 15, size='EWS', at=pos(J, f0), az=-14, el=18, lens=24), dict(f=f0, size='EWS', at=pos(J, f0), az=-13, el=17, lens=24),
@@ -897,8 +942,8 @@ def S15(f0, f1):                                    # park at sunset: "By summer
 
 def S16(f0, f1):                                    # kitchen: "And the jar of pickles? Her son, thirty-five, couldn't open it. June did. First try."
     setup(f0, f1); S6.kitchen()
-    J = cast('june', (-0.55, 1.05), face=('open', 'smile', 'happy'), f0=f0, f1=f1)
-    Sn = cast('son', (0.5, 1.0), pal=L.SON, style='man', face=('open', 'flat', 'determined'), f0=f0, f1=f1)
+    J = cast('june', (-0.3, 1.05), face=('open', 'smile', 'happy'), f0=f0, f1=f1)
+    Sn = cast('son', (0.33, 1.0), pal=L.SON, style='man', face=('open', 'flat', 'determined'), f0=f0, f1=f1)
     jar_s = S6.jar('jar_son'); L.hold(Sn, jar_s, 'sr', (0.0, -0.075, -0.03))
     jar_j = S6.jar('jar_june'); L.hold(J, jar_j, 'sr', (0.0, -0.075, -0.03))
     lid = bpy.data.objects['jar_june_lid']
@@ -919,7 +964,7 @@ def S16(f0, f1):                                    # kitchen: "And the jar of p
     antic(J, ft - 2, 5, 1.2)
     L.pose(J, ft - 2, ft + 2, {'hand_sl': -50, 'squash': (1.03, 0.97)})
     pop = ft + 3                                                                                          # POP: the lid flies off
-    L.pose(J, pop, pop + 6, {'ik_sl': (-0.22, 1.55), 'hand_sl': 30, 'squash': (0.96, 1.05)}, interp='BACK', easing='EASE_OUT')
+    big(J, pop, {'ik_sl': (-0.22, 1.55), 'hand_sl': 30, 'head': -6}, antic=4, move=4, over=0.15, hold=3, settle=10, squash=0.1)
     bpy.context.scene.frame_set(pop); lw = lid.matrix_world.translation.copy()
     free = W.cyl('lid_free', 0.058, 0.03, tuple(lw), W.toon('jar_june_lid', '#c8402f'), ink=0.003)
     hide_until(free, pop); F.key(lid, 'scale', (1, 1, 1), pop - 1, 'CONSTANT'); F.key(lid, 'scale', (0, 0, 0), pop, 'CONSTANT')
@@ -927,18 +972,18 @@ def S16(f0, f1):                                    # kitchen: "And the jar of p
         for i, v in ((0, lw.x + dx), (1, lw.y), (2, lw.z + dz)): F.key(free, 'location', v, f, 'BEZIER', 'AUTO', i)
         F.key(free, 'rotation_euler', math.radians(r), f, 'BEZIER', 'AUTO', 1)
     L.face(J, tr, eyes='happy', mouth='grin', brows='happy')
-    L.face(Sn, pop + 2, eyes='wide', mouth='O', brows='surprised'); L.look(Sn, pop, dx=-0.01, dz=0.006)
-    L.pose(Sn, pop + 2, pop + 9, {'lift': 0.05, 'squash': (0.95, 1.06), 'head': -6}, interp='BACK', easing='EASE_OUT')
-    L.pose(Sn, pop + 9, pop + 16, {'lift': 0.0, 'squash': (1.0, 1.0)})
+    L.face(Sn, pop + 12, eyes='wide', mouth='O', brows='surprised'); L.look(Sn, pop + 9, dx=-0.01, dz=0.006)
+    L.pose(Sn, pop + 12, pop + 19, {'lift': 0.05, 'squash': (0.95, 1.06), 'head': -6})
+    L.pose(Sn, pop + 19, pop + 26, {'lift': 0.0, 'squash': (1.0, 1.0)})
     look.fx_sparkle((lw.x - 0.15, lw.y - 0.1, lw.z + 0.3), pop + 4)
-    q = Vector((0.0, 1.0, 0))
+    q = Vector((0.02, 1.02, 0))
     cam = camera('S16', [
-        dict(f=f0 - 15, size='FS', at=q, az=-11, el=5, lens=28, H=3.3, cz=1.0), dict(f=f0, size='FS', at=q, az=-10, el=5, lens=28, H=3.3, cz=1.0),
-        dict(f=so, size='MS', at=Vector((0.5, 1.0, 0)), az=-5, el=3, lens=40),
-        dict(f=give, size='MS', at=q, az=-1, el=3, lens=36, H=1.7, cz=1.2),
-        dict(f=pop, size='MCU', at=Vector((-0.55, 1.05, 0)), az=2, el=2, lens=46),
-        dict(f=tr + 10, size='MS', at=q, az=6, el=3, lens=36, H=1.7, cz=1.2),
-        dict(f=f1, size='FS', at=q, az=10, el=6, lens=29, H=3.3, cz=1.0), dict(f=f1 + 20, size='FS', at=q, az=11, el=7, lens=28, H=3.5, cz=1.0)],
+        dict(f=f0 - 15, size='FS', at=q, az=-11, el=5, lens=28, H=3.1, cz=1.0), dict(f=f0, size='FS', at=q, az=-10, el=5, lens=28, H=3.0, cz=1.0),
+        dict(f=so - 4, size='MS', at=q, dx=0.12, az=-6, el=3, lens=36, H=1.9, cz=1.25),
+        dict(f=give, size='MS', at=q, az=-2, el=3, lens=36, H=1.9, cz=1.25),
+        dict(f=pop, size='MCU', at=Vector((-0.3, 1.05, 0)), dx=0.1, az=2, el=2, lens=42, H=1.15, cz=1.38),
+        dict(f=pop + 16, size='MS', at=q, az=6, el=3, lens=36, H=1.9, cz=1.25),
+        dict(f=f1, size='FS', at=q, az=10, el=6, lens=29, H=3.0, cz=1.0), dict(f=f1 + 20, size='FS', at=q, az=11, el=7, lens=28, H=3.2, cz=1.0)],
         focus=J['j']['torso'])
     light('kitchen', f0, f1 + HANDLE)
     finish('S16', f0, f1, cam)

@@ -73,7 +73,7 @@ def floor_grid(name, xr, yr, step, hexcol, z=0.0):
 
 # ---------------------------------------------------------------- kitchen (warm morning)
 def kitchen():
-    wall = W.toon('k_wall', '#ecd6b2'); tile = W.toon('k_tile', '#f6eedc'); floor = W.toon('k_floor', '#a8705a', 'wood_deck.png')
+    wall = W.toon('k_wall', '#ecd6b2'); tile = W.toon('k_tile', '#f6eedc'); floor = W.toon('k_floor', '#c9a27e', 'wood_deck.png')
     cab = W.toon('k_cab', '#86b39c'); top = W.toon('k_top', '#ede4d4'); line = W.toon('k_line', '#456e5d')
     W.box('floor', (12, 10, 0.1), (0, -1.0, -0.05), floor, ink=0)
     W.box('ceiling', (12, 10, 0.1), (0, -1.0, 3.0), W.toon('k_ceil', '#efe2cc'), ink=0)
@@ -204,8 +204,8 @@ def stairs_ground(x, y):
 
 
 def stairs(night=False):
-    wall = W.toon('h_wall', '#e2d2b0' if not night else '#b8a890'); carpet = W.toon('h_carpet', '#8f3b3b')
-    wood = W.toon('h_wood', '#7a5236', 'wood_dark.png'); white = W.toon('h_white', '#f2ece2'); carpet = W.toon('h_carpet', '#a24a44')
+    wall = W.toon('h_wall', '#e2d2b0' if not night else '#5b6fc0'); carpet = W.toon('h_carpet', '#8f3b3b')
+    wood = W.toon('h_wood', '#7a5236', 'wood_dark.png'); white = W.toon('h_white', '#f2ece2' if not night else '#b4bfe6'); carpet = W.toon('h_carpet', '#a24a44')
     W.box('hall_floor', (7, 19, 0.1), (1.0, 4.0, -0.05), W.toon('h_floor', '#a87a52', 'wood_deck.png'), ink=0)
     W.box('wall_far_right', (0.2, 19, 6.5), (3.2, 4.0, 3.25), wall, ink=0)
     W.box('wall_back_hall', (7, 0.2, 6.5), (1.0, -4.6, 3.25), wall, ink=0)
@@ -221,7 +221,7 @@ def stairs(night=False):
         W.box(f'lspindle{k}', (0.035, 0.035, 0.9), (0.72, 0.1 - k * 0.45, LANDING_Z + 0.45), white, ink=0.003)
     W.box('lrail', (0.07, 2.6, 0.06), (0.72, -1.1, LANDING_Z + 0.92), wood, ink=0.004)
     W.box('skirt_l', (0.04, 16, 0.12), (-0.74, 3.0, 0.06), white, ink=0)
-    W.box('ceiling', (7, 19, 0.1), (1.0, 4.0, LANDING_Z + 2.6), W.toon('h_ceil', '#efe6d6'), ink=0)
+    W.box('ceiling', (7, 19, 0.1), (1.0, 4.0, LANDING_Z + 2.6), W.toon('h_ceil', '#efe6d6' if not night else '#3f4f8f'), ink=0)
     # banister on the right: posts and a sloped handrail
     W.box('newel', (0.1, 0.1, 1.15), (0.68, STAIR_Y0 - 0.05, 0.575), wood, ink=0.006)
     for k in range(0, STEP_N, 2):
@@ -255,15 +255,17 @@ def doctor():
     _window('dwin', -0.8, 1.0, 0.95, 2.35, 2.35, frame_hex='#f4f4f0', sky=('#f4fbff', '#cfe6f7', '#8fbbe8'), mull=False)
     for k in range(9):                                           # venetian blinds, half drawn
         W.box(f'blind{k}', (1.8, 0.03, 0.035), (0.1, 2.28, 2.3 - k * 0.075), W.toon('d_blind', '#f6f4ee'), ink=0)
-    desk = W.toon('d_desk', '#c9a27a', 'wood_deck.png'); steel = W.toon('d_steel', '#7d8794')     # a plain desk (the library's
+    desk = W.toon('d_desk', '#d8b892'); steel = W.toon('d_steel', '#7d8794')     # a plain desk (the library's
     W.box('desk_top', (1.5, 0.75, 0.05), (0.35, 1.0, 0.75), desk, ink=0)                            # one is too big to stage around)
     W.box('desk_front', (1.46, 0.03, 0.5), (0.35, 0.64, 0.48), desk, ink=0)
     for x in (-0.36, 1.06): W.box(f'desk_leg{x}', (0.05, 0.7, 0.72), (x, 1.0, 0.36), steel, ink=0)
     W.furniture('classic_laptop', (0.75, 0.95, 0.775), 200, 1.0)
     W.furniture('clipboard', (0.0, 0.85, 0.775), 10, 1.0)
     W.furniture('desk_lamp_arm_01', (-0.2, 1.2, 0.775), 30, 1.0)
-    W.furniture('steel_frame_shelves_01', (2.6, 1.9, 0), 180, 1.0)
-    W.furniture('medical_box', (2.45, 1.85, 1.22), 180, 1.0)
+    shelf = W.toon('d_shelf', '#e9e4da')                             # a simple wall shelf (the library's steel rack is huge)
+    for z in (1.1, 1.5): W.box(f'dshelf{z}', (0.9, 0.28, 0.03), (2.2, 2.15, z), shelf, ink=0)
+    for k, (x, c_) in enumerate(((1.9, '#7fa7c8'), (2.1, '#e07a5f'), (2.35, '#f2c14e'))):
+        W.box(f'dbox{k}', (0.16, 0.2, 0.22), (x, 2.12, 1.235), W.toon(f'dbox{k}', c_), ink=0.004)
     W.furniture('wall_clock', (-1.7, 2.29, 2.1), 0, 1.0)
     W.furniture('potted_plant_04', (-2.3, 1.6, 0), 0, 1.0)
     W.box('couch', (0.75, 1.9, 0.6), (-2.2, 0.2, 0.3), W.toon('d_couch', '#7fa7c8'), ink=0.006)
@@ -274,14 +276,14 @@ def doctor():
 
 
 # ---------------------------------------------------------------- light rigs (world3d.light keywords) per set
-look.MOODS['kitchen'] = dict(look.MOODS['living'], top=(0.46, 0.40, 0.36), hor=(0.72, 0.58, 0.46), sat=0.95,
-                             gain=(0.98, 0.93, 0.86), lift=(0.92, 0.9, 0.96), gam=1.0)
-look.MOODS['bath'] = dict(look.MOODS['living'], top=(0.46, 0.52, 0.6), hor=(0.62, 0.7, 0.76), sat=0.9,
-                          gain=(0.88, 0.93, 1.0), lift=(0.9, 0.93, 1.0), gam=1.0)
-look.MOODS['hall'] = dict(look.MOODS['living'], top=(0.42, 0.38, 0.36), hor=(0.6, 0.52, 0.46), sat=0.9,
-                          gain=(0.92, 0.88, 0.84), lift=(0.9, 0.9, 0.96), gam=1.0)
+look.MOODS['kitchen'] = dict(look.MOODS['living'], top=(0.46, 0.40, 0.36), hor=(0.72, 0.58, 0.46), sat=1.05, wstr=0.25,
+                             gain=(0.84, 0.72, 0.68), lift=(0.92, 0.9, 0.96), gam=1.0)
+look.MOODS['bath'] = dict(look.MOODS['living'], top=(0.46, 0.52, 0.6), hor=(0.62, 0.7, 0.76), sat=1.04, wstr=0.25,
+                          gain=(0.77, 0.75, 0.84), lift=(0.9, 0.93, 1.0), gam=1.0)
+look.MOODS['hall'] = dict(look.MOODS['living'], top=(0.42, 0.38, 0.36), hor=(0.6, 0.52, 0.46), sat=0.95, wstr=0.25,
+                          gain=(0.86, 0.75, 0.73), lift=(0.9, 0.9, 0.96), gam=1.0)
 look.MOODS['hall_night'] = dict(look.MOODS['living'], top=(0.05, 0.07, 0.16), hor=(0.08, 0.1, 0.2), wstr=0.4,
-                                fill=((0.45, 0.55, 1.0), 12.0), lamp=((1.0, 0.7, 0.42), 90.0), sat=1.4,
+                                fill=((0.45, 0.55, 1.0), 12.0), lamp=((1.0, 0.7, 0.42), 140.0), sat=1.4,
                                 gain=(0.72, 0.78, 1.0), lift=(0.9, 0.92, 1.04), gam=1.0, vig=0.5)
 look.MOODS['clinic'] = dict(look.MOODS['gym'], sat=1.15, gain=(0.95, 0.97, 1.0))
 look.MOODS['street'] = dict(look.MOODS['day'], sat=1.05, gain=(0.92, 0.88, 0.82))

@@ -192,7 +192,7 @@ look.MOODS['living'] = dict(top=(0.40, 0.33, 0.38), hor=(0.62, 0.46, 0.40), wstr
 look.MOODS['park_dusk'] = dict(look.MOODS['dusk'], sat=1.25, gain=(0.98, 0.9, 0.85))
 
 look.MOODS['gym'] = dict(top=(0.52, 0.58, 0.72), hor=(0.78, 0.74, 0.70), wstr=0.55,
-                         sun=((1.0, 0.95, 0.9), 0.0, (-40, 50)), fill=((1.0, 0.86, 0.72), 25.0), lamp=((1.0, 0.8, 0.6), 0.0),
+                         sun=((1.0, 0.95, 0.9), 0.0, (-40, 50)), fill=((0.72, 0.8, 1.0), 25.0), lamp=((1.0, 0.8, 0.6), 0.0),
                          exp=0.0, sat=1.1, con=0.30, gam=1.12, gain=(0.96, 0.97, 1.0), lift=(0.97, 0.98, 1.06), vig=0.38, haze=0.04)
 
 
@@ -363,3 +363,5 @@ def gym():
         box(f'poster_art{k}', (0.5, 0.02, 0.7), (x, 2.96, 2.1), toon(f'poster{k}', art), ink=0)
     furniture('potted_plant_01', (-3.0, 2.5, 0), 0, 1.0)
     furniture('potted_plant_04', (3.7, -1.6, 0), 0, 1.4)
+    for x in (-1.6, 0.4, 2.4):                                       # ceiling light strips: leading lines, and the only highlights
+        box(f'strip{x}', (0.18, 7.0, 0.03), (x, -0.4, 3.53), emit(f'strip{x}', '#fff6e6', 2.5), ink=0)
