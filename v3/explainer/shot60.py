@@ -658,16 +658,16 @@ def S08(f0, f1):                                    # doctor: "Her doctor wrote 
                                        ('Twice a week.', 0.019, 0.075))):
         t = S6.text(f'note_t{k}', txt, (0, -0.004, z), sz, '#2b3a66', rot=(90, 0, 0), emit=0.9); t.parent = note; t.location = (0, -0.004, z)
     L.hold(D, note, 'sr', (0.0, -0.05, 0.02)); hide_until(note, wf(10, 'prescription') + 4)
-    pr = wf(10, 'prescription'); pill = wf(10, 'pill'); li = wf(11, 'Lift'); tw = wf(11, 'Twice')
+    pr = wf(10, 'prescription'); wn = wf(10, 'wasn'); pill = wf(10, 'pill'); li = wf(11, 'Lift'); tw = wf(11, 'Twice')
     for k, f in enumerate(range(f0, pr, 5)):                                    # the doctor writes on the desk, quick scribbles
         L.pose(D, f, f + 3, {'ik_sr': (0.05 + (0.04 if k % 2 else 0.0), 1.22), 'hand_sr': 10 if k % 2 else -10, 'head': 8})
     L.look(D, f0 + 2, dx=0.0, dz=-0.01); L.face(D, f0, eyes='open', mouth='flat', brows='determined')
-    big(D, pr, {'ik_sr': (0.05, 1.42), 'hand_sr': 0, 'head': -4}, antic=5, move=6, settle=10, squash=0.08,
-        face=('happy', 'grin', 'happy'), look=(-0.008, 0.0))                                        # holds it up, beaming
+    big(D, pr, {'ik_sr': (0.22, 1.34), 'hand_sr': 0, 'head': -4}, antic=5, move=6, settle=10, squash=0.08,
+        face=('happy', 'grin', 'happy'), look=(-0.008, 0.0))                                        # holds it up beside her face, beaming
     L.look(J, pr - 3, dx=0.009, dz=-0.006)
     L.pose(J, pr + 2, pr + 10, {'torso': -6, 'head': -8, 'squash': (0.98, 1.02)})                   # June leans in, curious
     L.face(J, pr + 4, eyes='open', mouth='flat', brows='surprised')
-    big(J, pill - 2, {'head': 4, 'torso': 0, 'lift': 0.03}, antic=4, move=4, settle=8, squash=0.08, face=('wide', 'O', 'surprised'))
+    big(J, wn, {'head': 4, 'torso': 0, 'lift': 0.03}, antic=4, move=4, settle=8, squash=0.08, face=('wide', 'O', 'surprised'))   # 'wasn't a pill?!'
     L.pose(J, pill + 10, pill + 16, {'lift': 0.0})
     big(J, tw, {'arm_sl': (14, 30, 0), 'arm_sr': (40, 95, 0), 'head': 2, 'squash': (0.97, 1.03)}, antic=4, move=5, settle=8,
         squash=0.06, face=('open', 'flat', 'worried'), look=(0.0, 0.0))                             # "twice?!" she mimes a lift, gulps
@@ -676,9 +676,10 @@ def S08(f0, f1):                                    # doctor: "Her doctor wrote 
     cam = camera('S08', [
         dict(f=f0 - 15, size='FS', at=Vector((-0.2, 0.8, 0)), az=-12, el=6, lens=30), dict(f=f0, size='FS', at=Vector((-0.2, 0.8, 0)), az=-10, el=6, lens=30),
         dict(f=pr - 6, size='MS', at=Vector((0.35, 1.45, -0.42)), az=-4, el=3, lens=40, H=1.45, cz=1.45),
-        dict(f=pill - 6, size='MS', at=Vector((-0.25, 0.8, 0)), az=3, el=3, lens=34, H=1.9, cz=1.15),
-        dict(f=li + 8, size='MCU', at=Vector((0.35, 1.45, -0.42)), dx=0.08, H=0.9, cz=1.55, az=4, el=1, lens=48),   # the note up by her face
-        dict(f=tw - 2, size='MCU', at=Vector((0.35, 1.45, -0.42)), dx=0.08, H=0.82, cz=1.55, az=7, el=1, lens=50),
+        dict(f=wn + 3, size='WS', at=Vector((-0.45, 0.8, 0)), az=-12, el=3, lens=30, H=3.2, cz=1.1),      # two-shot: June's 'not a pill?!' take
+        dict(f=wn + 12, size='WS', at=Vector((-0.42, 0.8, 0)), az=-9, el=3, lens=31, H=3.05, cz=1.1),
+        dict(f=li + 8, size='MCU', at=Vector((0.35, 1.45, -0.42)), dx=0.12, H=1.05, cz=1.52, az=4, el=3, lens=48),   # the note up by her face
+        dict(f=tw - 2, size='MCU', at=Vector((0.35, 1.45, -0.42)), dx=0.12, H=0.98, cz=1.52, az=7, el=3, lens=50),
         dict(f=tw + 12, size='MS', at=Vector((-0.85, 0.3, 0)), az=4, el=3, lens=40),
         dict(f=f1 + 8, size='MS', at=Vector((-0.85, 0.3, 0)), az=8, el=3, lens=42),
         dict(f=f1 + 30, size='MS', at=Vector((-0.85, 0.3, 0)), az=10, el=3, lens=43)],

@@ -259,7 +259,7 @@ def doctor():
     W.box('desk_top', (1.5, 0.75, 0.05), (0.35, 1.0, 0.75), desk, ink=0)                            # one is too big to stage around)
     W.box('desk_front', (1.46, 0.03, 0.5), (0.35, 0.64, 0.48), desk, ink=0)
     for x in (-0.36, 1.06): W.box(f'desk_leg{x}', (0.05, 0.7, 0.72), (x, 1.0, 0.36), steel, ink=0)
-    W.furniture('classic_laptop', (0.75, 0.95, 0.775), 200, 1.0)
+    W.furniture('classic_laptop', (1.02, 1.12, 0.775), 200, 1.0)                    # back corner: clear of the MCU sightline
     W.furniture('clipboard', (0.0, 0.85, 0.775), 10, 1.0)
     W.furniture('desk_lamp_arm_01', (-0.2, 1.2, 0.775), 30, 1.0)
     shelf = W.toon('d_shelf', '#e9e4da')                             # a simple wall shelf (the library's steel rack is huge)
@@ -283,10 +283,14 @@ look.MOODS['bath'] = dict(look.MOODS['living'], top=(0.46, 0.52, 0.6), hor=(0.62
 look.MOODS['hall'] = dict(look.MOODS['living'], top=(0.42, 0.38, 0.36), hor=(0.6, 0.52, 0.46), sat=0.95, wstr=0.25,
                           gain=(0.86, 0.75, 0.73), lift=(0.9, 0.9, 0.96), gam=1.0)
 look.MOODS['hall_night'] = dict(look.MOODS['living'], top=(0.05, 0.07, 0.16), hor=(0.08, 0.1, 0.2), wstr=0.4,
-                                fill=((0.45, 0.55, 1.0), 12.0), lamp=((1.0, 0.7, 0.42), 140.0), sat=1.4,
-                                gain=(0.72, 0.78, 1.0), lift=(0.9, 0.92, 1.04), gam=1.0, vig=0.5)
-look.MOODS['clinic'] = dict(look.MOODS['gym'], sat=1.15, gain=(0.95, 0.97, 1.0))
+                                fill=((0.45, 0.55, 1.0), 12.0), lamp=((1.0, 0.7, 0.42), 140.0), sat=0.9,
+                                gain=(0.72, 0.75, 0.9), lift=(0.9, 0.92, 1.04), gam=1.0, vig=0.5)
+look.MOODS['clinic'] = dict(look.MOODS['gym'], sat=1.3, gain=(0.82, 0.84, 0.88))     # interior band: YAVG <= 139
 look.MOODS['street'] = dict(look.MOODS['day'], sat=1.05, gain=(0.92, 0.88, 0.82))
+if os.environ.get('SETS_TUNE'):   # grade tuning for the set moods above: SETS_TUNE='{"hall_night":{"sat":0.8}}'
+    import json as _json
+    for _m, _d in _json.loads(os.environ['SETS_TUNE']).items():
+        if _m in look.MOODS: look.MOODS[_m].update({k: (tuple(v) if isinstance(v, list) else v) for k, v in _d.items()})
 
 LIGHT = {
     'kitchen': dict(mood='kitchen', lamp_at=(0, 0, -10), key_at=(-3.2, -1.6, 2.7), key_to=(0.0, 0.5, 1.0), key_energy=520,
