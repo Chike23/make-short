@@ -7,6 +7,7 @@ import { buildExplainerAss, overlays, FONTS_DIR } from './captions-explainer.mjs
 const here = path.dirname(new URL(import.meta.url).pathname.replace(/^\/(\w:)/, '$1'));
 const root = path.join(here, '..');
 const silent = process.argv[2] || path.join(root, 'out', 'short-v3-silent.mp4');
+const VID_DUR = Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', silent], { encoding: 'utf8' }).trim());
 const T = JSON.parse(fs.readFileSync(path.resolve(process.argv[4] || path.join(here, 'voice-timing.json')), 'utf8').replace(/^\uFEFF/, ''));
 const words = T.lines.flatMap(l => l.words.map(w => ({ ...w, line: l.line })));
 
@@ -74,7 +75,7 @@ for (let i = 0; i < words.length; i++) {
 const CAP_UP = CF.capUp || [];
 const ev = [];
 groups.forEach((w, i) => {
-  const end = groups[i + 1]?.start ?? Math.min(w.end + 0.4, T.duration + 0.4);   // hold until the next card: no gaps
+  const end = groups[i + 1]?.start ?? Math.max(w.end + 0.4, VID_DUR);   // hold until the next card; the last one holds to the end of the picture
   const y = CAP_UP.some(([a, b]) => w.start * 30 >= a && w.start * 30 < b) ? CAP_Y - 620 : CAP_Y;
   const pos = `\\an2\\pos(540,${y})`;
   ev.push(`Dialogue: 0,${ts(w.start)},${ts(end)},S,,0,0,0,,{${pos}\\blur5}${w.text}`);   // soft shadow layer

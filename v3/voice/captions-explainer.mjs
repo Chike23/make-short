@@ -114,7 +114,7 @@ export function overlays(list, words, o = DEF) {
       if (ov.label) push(t, `\\an7\\pos(${x + 6},${y + 14})\\fn${font}\\b0\\fs${ov.labelSize ?? 40}\\c${bgr(ov.labelColour ?? 'D8D8D8')}`, ov.label);
     } else if (ov.type === 'counter') { // small "age" over a big "30", with a thin rule under it, right aligned
       push(t, `\\an3\\pos(${x},${y - (ov.size ?? 150) * 0.95})\\fn${font}\\b0\\fs${ov.labelSize ?? 36}\\c${bgr('C8C8C8')}`, ov.label ?? '');
-      push(t, `\\an3\\pos(${x},${y})\\fn${font}\\b0\\fs${ov.size ?? 150}\\c${bgr(o.white)}`, ov.text);
+      push(t, `\\an3\\pos(${x},${y})\\fn${font}\\b${ov.bold === false ? 0 : 1}\\fs${ov.size ?? 150}\\c${bgr(o.white)}`, ov.text);
       const w = ov.ruleWidth ?? 190;
       line(t, rect(x - w, y + 18, w, 3), 'C8C8C8');
     } else if (ov.type === 'note') {   // small grey footnote, bottom left: "Body water shown in magenta"
